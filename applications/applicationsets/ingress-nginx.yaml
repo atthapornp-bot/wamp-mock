@@ -1,0 +1,275 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ingress-nginx
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: local
+            server: https://kubernetes.default.svc
+            clusterName: dev-wamp
+            awsRegion: ap-southeast-1
+
+  template:
+    metadata:
+      name: "{{name}}-ingress-nginx"
+
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+
+      project: cluster-ops
+
+      destination:
+        namespace: ingress-nginx
+        server: "{{server}}"
+
+      source:
+        repoURL: https://kubernetes.github.io/ingress-nginx
+        chart: ingress-nginx
+        targetRevision: 4.11.2 # appVersion: 1.11.2
+        helm:
+          parameters:
+            ## Is this the default ingressClass for the cluster
+            - name: controller.ingressClassResource.default
+              value: "true"
+
+            ## To adjust resources requests/limits
+            - name: controller.resources.limits.cpu
+              value: 1000m
+            - name: controller.resources.limits.memory
+              value: 1024Gi
+            - name: controller.resources.requests.cpu
+              value: 300m
+            - name: controller.resources.requests.memory
+              value: 256Mi
+
+            ## HPA configuration
+            - name: controller.autoscaling.minReplicas
+              value: "2"
+
+            ## For Single-node cluster or host networking mode, uncomment these section below
+            ## https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network
+            # - name: controller.dnsPolicy
+            #   value: ClusterFirstWithHostNet
+            # - name: controller.reportNodeInternalIp
+            #   value: "true"
+            # - name: controller.hostNetwork
+            #   value: "true"
+            # - name: controller.hostPort.enabled
+            #   value: "true"
+            # - name: controller.kind
+            #   value: DaemonSet
+            # - name: controller.autoscaling.enabled
+            #   value: "false"
+            # - name: controller.service.type # For internal routing
+            #   value: ClusterIP
+
+            ## Provider specific configurations: AWS
+            ## - AWS https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/service/annotations/
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type
+              value: external
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-scheme
+              value: internet-facing
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-backend-protocol
+              value: tcp
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-proxy-protocol
+              value: "*"
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-nlb-target-type
+              value: ip
+            - name: controller.config.use-proxy-protocol
+              value: "true"
+            - name: controller.config.compute-full-forwarded-for
+              value: "true"
+            - name: controller.config.enable-real-ip
+              value: "true"
+            - name: controller.config.use-forwarded-headers
+              value: "true"
+
+            ## Provider specific configurations: Cloudflare Tunnel/Proxy
+            # - name: controller.config.forwarded-for-header
+            #   value: cf-connecting-ip
+            # - name: controller.config.compute-full-forwarded-for
+            #   value: "true"
+            # - name: controller.config.enable-real-ip
+            #   value: "true"
+            # - name: controller.config.use-forwarded-headers
+            #   value: "true"
+
+            ## Provider specific configurations: GCP
+            ## - GCP https://cloud.google.com/kubernetes-engine/docs/how-to/load-balance-ingress#service_annotations_related_to_ingress
+            # - name: controller.service.annotations.service\.alpha\.kubernetes\.io/app-protocols
+            #   value: http2
+
+            ## Provider specific configurations: DO
+            ## - DO https://github.com/digitalocean/digitalocean-cloud-controller-manager/blob/master/docs/controllers/services/annotations.md
+            # - name: controller.service.annotations.service\.beta\.kubernetes\.io/do-loadbalancer-name
+            #   value: localhost
+            # - name: controller.service.annotations.service\.beta\.kubernetes\.io/do-loadbalancer-hostname
+            #   value: localhost
+            # - name: controller.service.annotations.service\.beta\.kubernetes\.io/do-loadbalancer-enable-backend-keepalive
+            #   value: "true"
+            # - name: controller.service.annotations.service\.beta\.kubernetes\.io/do-loadbalancer-enable-proxy-protocol
+            #   value: "true"
+            # - name: controller.service.annotations.service\.beta\.kubernetes\.io/do-loadbalancer-protocol
+            #   value: tcp
+            # - name: controller.config.use-proxy-protocol
+            #   value: "true"
+            # - name: controller.config.compute-full-forwarded-for
+            #   value: "true"
+            # - name: controller.config.enable-real-ip
+            #   value: "true"
+            # - name: controller.config.use-forwarded-headers
+            #   value: "true"
+
+            ## Service annotations
+            ## https://github.com/kubernetes-sigs/external-dns/blob/master/docs/faq.md#how-do-i-specify-a-dns-name-for-my-kubernetes-objects
+            # - name: controller.service.annotations.external-dns\.alpha\.kubernetes\.io/hostname
+            #   value: localhost
+
+            ## Service annotations
+            ## https://metallb.universe.tf/usage/#requesting-specific-ips
+            # - name: controller.service.annotations.metallb\.universe\.tf/address-pool
+            #   value: ingress-nginx-pool
+
+          values: |
+            ## https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
+
+            ## Overrides for generated resource names
+            fullnameOverride: ingress-nginx
+
+            ## Labels to apply to all resources
+            commonLabels:
+              project: cluster-ops
+
+            controller:
+              # -- Will add custom configuration options to Nginx https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/
+              config:
+                hsts: "false"
+                hsts-include-subdomains: "false"
+                allow-snippet-annotations: "true"
+                proxy-add-original-uri-header: "true"
+
+              # https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network
+              dnsPolicy: ClusterFirst
+              reportNodeInternalIp: false
+
+              # https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network
+              hostNetwork: false
+              hostPort:
+                enabled: false
+                ports:
+                  http: 80
+                  https: 443
+
+              ingressClassResource:
+                name: nginx
+                enabled: true
+                # -- Is this the default ingressClass for the cluster
+                default: false
+
+              publishService:
+                # -- Enable 'publishService' or not
+                enabled: true
+
+              # -- Additional command line arguments to pass to nginx-ingress-controller
+              extraArgs: {}
+              ## extraArgs:
+              ##   default-ssl-certificate: "<namespace>/<secret_name>"
+
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 300m
+                  memory: 256Mi
+
+              # -- Use a `DaemonSet` or `Deployment`
+              kind: Deployment
+
+              autoscaling:
+                enabled: true
+                minReplicas: 1
+                maxReplicas: 8
+                targetCPUUtilizationPercentage: 90
+                targetMemoryUtilizationPercentage: 90
+                behavior:
+                  scaleUp:
+                    stabilizationWindowSeconds: 60
+                    policies:
+                      - type: Pods
+                        value: 1
+                        periodSeconds: 60
+                  scaleDown:
+                    stabilizationWindowSeconds: 300
+                    policies:
+                      - type: Pods
+                        value: 1
+                        periodSeconds: 60
+
+              ## Controller Service
+              service:
+                enabled: true
+                type: LoadBalancer
+
+                ## Set external traffic policy to: "Local" to preserve source IP on providers supporting it.
+                ## https://kubernetes.io/docs/tutorials/services/source-ip/#source-ip-for-services-with-typeloadbalancer
+                # externalTrafficPolicy: Cluster
+
+                annotations: {}
+
+              extraContainers: []
+
+              metrics:
+                enabled: true
+
+                serviceMonitor:
+                  enabled: true
+                  scrapeInterval: 15s
+                  additionalLabels:
+                    release: kube-prometheus-stack
+
+                prometheusRule:
+                  enabled: true
+                  additionalLabels:
+                    release: kube-prometheus-stack
+                  rules:
+                    # These are just examples rules, please adapt them to your needs
+                    - alert: NGINXConfigFailed
+                      expr: count(nginx_ingress_controller_config_last_reload_successful == 0) > 0
+                      for: 1s
+                      labels:
+                        severity: critical
+                      annotations:
+                        description: bad ingress config - nginx config test failed
+                        summary: uninstall the latest ingress changes to allow config reloads to resume
+                    - alert: NGINXCertificateExpiry
+                      expr: (avg(nginx_ingress_controller_ssl_expire_time_seconds) by (host) - time()) < 604800
+                      for: 1s
+                      labels:
+                        severity: critical
+                      annotations:
+                        description: ssl certificate(s) will expire in less then a week
+                        summary: renew expiring certificates to avoid downtime
+                    - alert: NGINXTooMany500s
+                      expr: 100 * ( sum( nginx_ingress_controller_requests{status=~"5.+"} ) / sum(nginx_ingress_controller_requests) ) > 5
+                      for: 1m
+                      labels:
+                        severity: warning
+                      annotations:
+                        description: Too many 5XXs
+                        summary: More than 5% of all requests returned 5XX, this requires your attention
+                    - alert: NGINXTooMany400s
+                      expr: 100 * ( sum( nginx_ingress_controller_requests{status=~"4.+"} ) / sum(nginx_ingress_controller_requests) ) > 5
+                      for: 1m
+                      labels:
+                        severity: warning
+                      annotations:
+                        description: Too many 4XXs
+                        summary: More than 5% of all requests returned 4XX, this requires your attention

@@ -1,0 +1,75 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: metrics-server
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: local
+            server: https://kubernetes.default.svc
+            clusterName: dev-wamp
+            awsRegion: ap-southeast-1
+
+  template:
+    metadata:
+      name: "{{name}}-metrics-server"
+
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+
+      project: cluster-ops
+
+      destination:
+        namespace: kube-metrics-server
+        server: https://kubernetes.default.svc
+
+      source:
+        repoURL: https://kubernetes-sigs.github.io/metrics-server
+        chart: metrics-server
+        targetRevision: 3.11.0 # appVersion: v0.7.0
+        helm:
+          releaseName: metrics-server
+          parameters:
+            - name: replicas
+              value: "2"
+
+          values: |
+            ## https://github.com/kubernetes-sigs/metrics-server/blob/master/charts/metrics-server/values.yaml
+            ---
+            image:
+              tag: v0.7.0
+
+            apiService:
+              create: true
+            replicas: 2
+
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 3
+                    preference:
+                      matchExpressions:
+                        - key: project
+                          operator: In
+                          values:
+                            - cluster-ops
+                  - weight: 2
+                    preference:
+                      matchExpressions:
+                        - key: environment
+                          operator: In
+                          values:
+                            - critical
+                  - weight: 1
+                    preference:
+                      matchExpressions:
+                        - key: eks.amazonaws.com/capacityType
+                          operator: In
+                          values:
+                            - ON_DEMAND

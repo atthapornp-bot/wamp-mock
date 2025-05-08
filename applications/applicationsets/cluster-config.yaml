@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-config
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: local
+            server: https://kubernetes.default.svc
+            clusterName: dev-wamp
+            awsRegion: ap-southeast-1
+
+  template:
+    metadata:
+      name: "{{name}}-cluster-config"
+      annotations:
+        argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: false
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+
+      project: cluster-ops
+
+      destination:
+        server: "{{server}}"
+
+      source:
+        repoURL: https://gitmtl.muangthai.co.th/mtl-digital/mtl-wamp/gitops/kubernetes/cluster-ops.git
+        path: cluster-config/{{name}}
+        targetRevision: refs/heads/main
+        directory:
+          recurse: true

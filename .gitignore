@@ -1,0 +1,14 @@
+## direnv
+.envrc
+
+## editor
+**/*.swp
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+## unsealed-secrets
+**/unsealed-secrets/*.yaml
