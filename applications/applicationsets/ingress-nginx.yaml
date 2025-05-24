@@ -67,15 +67,17 @@ spec:
             #   value: DaemonSet
             # - name: controller.autoscaling.enabled
             #   value: "false"
-            - name: controller.service.type # For internal routing
-              value: ClusterIP
+            # - name: controller.service.type # For internal routing
+            #   value: ClusterIP
 
             ## Provider specific configurations: AWS
             ## - AWS https://kubernetes-sigs.github.io/aws-load-balancer-controller/latest/guide/service/annotations/
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type
               value: external
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-scheme
-              value: internet-facing
+              value: internal
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-subnets
+              value: dev-salestool-subnet-tgw-ap-southeast-1a, dev-salestool-subnet-tgw-ap-southeast-1b
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-backend-protocol
               value: tcp
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-proxy-protocol
@@ -83,17 +85,13 @@ spec:
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-nlb-target-type
               value: ip
             - name: controller.config.use-proxy-protocol
-              value: "false" # Set to true if you want to use Proxy Protocol
+              value: "true"
             - name: controller.config.compute-full-forwarded-for
               value: "true"
             - name: controller.config.enable-real-ip
               value: "true"
             - name: controller.config.use-forwarded-headers
               value: "true"
-            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-source-ranges
-              value: "173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/12,172.64.0.0/13,131.0.72.0/22,192.168.0.0/16" # Cloudflare and MTL internal IP ranges
-            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-waf-acl-id
-              value: b4a477a6-9663-462f-b4b0-9edaf906014a
 
             ## Provider specific configurations: Cloudflare Tunnel/Proxy
             # - name: controller.config.forwarded-for-header
@@ -221,7 +219,7 @@ spec:
               ## Controller Service
               service:
                 enabled: true
-                type: ClusterIP
+                type: LoadBalancer
 
                 ## Set external traffic policy to: "Local" to preserve source IP on providers supporting it.
                 ## https://kubernetes.io/docs/tutorials/services/source-ip/#source-ip-for-services-with-typeloadbalancer
