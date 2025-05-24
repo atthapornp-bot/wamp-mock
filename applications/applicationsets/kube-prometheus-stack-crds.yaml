@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: kube-prometheus-stack-crds
-  namespace: argocd
+  namespace: argo-cd
 spec:
   generators:
     - list:
