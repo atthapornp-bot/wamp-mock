@@ -1,0 +1,19 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: kube-prometheus-stack-grafana
+  namespace: kube-prometheus-stack
+spec:
+  encryptedData:
+    admin-password: AgAifnCkGunw1KBcIwSq7XvD/S9+XzY9zedWQH3NFXR6pE2k2IeuBboAFMMeQ+nzvwSOxDPVR2d20/wxq4UOAzJzYN7HJuAn/A7ZKdDcFh74oNQPWU4lKT4Ke/UyXM+PCjGr65dJctbBNB8uAUkOFoJNAR6XENDqeP4rATJLfwap5qZhp97dAf5jXa0FsNDpbyEld4bANshi7CHsI8cgXnZZ3iaaemyn2rVa9+9RGu37UslRG0q8EWTr+IkBIOqEHpozhm5dYndclgSCC5gaUTAZEjo9ZbFkXYMC5fbLlYQCw2LXnV1eJFvCmnMLaEm71N/iDPF3sv2rsOKBVS4BmPkukUzRWB+yLO5WnK9mjzj2P8lD0rh/bkYkbj0Fs1B0fSTPGzxqRWyLMLE6/eDuF7+n+Dl99BiFTk1/OYAIqC6QQrVQvhDJpRLeesRB0COOBLthl7s/+MdzpLvmEoqctYd0xsOiRcwUiPPeJ2USnjcbK4yVUSLEyUZSlyhT+a6IkhxwclI3f5AkYSBSOaybYbBVV7HaA4FahPZmAtrDpZnPCg7qXi8WcPj95k7INqqhfqXhoPctmVJ2O9+koeKwS8zMLSBP4qMIOrg1aA9hMJBWyqnZgyfXzkHPWhdR1qihlOBpJSD5LZwEhW9HbZjvXU7FxSM9yqEm3c2F+ribTf5L0O4Bmy1hiaOS98xRUF7KrGTxsn7B06qNAnGlqh4MMVyD9m9wevC43Zpi6+ej+4Txiw==
+    admin-user: AgCWjeuJVw2xFcyiedTzocKUwr2pMJJPueiN+nucmgeLM1GqDL0G2JrK8uTKa62PB5d7gqRDyCNVjlgdLf7DGzFQmsVQ9kq8D9a6PMYC+iS61LpSoYEVYqUZ52KnGCJaCA258GDpJBfxDVG/OFf0zPtkNTOFRruSkbkuy6/mhbNO5hyV1p+RYBKbpQ1c8eXX32y93DNPILuC7go+XhNS5McCCxCvMLhJq45fEYNr/xoQiPo6DY9v0UkYYCkQoh/fYZTsAnDQTnYET+/kIsdiRQqvAY2I8ld2qWS77vAUjLaegsybhQ5y2VLfmReQSuTSv4c3aX2pldMYu0LrySvPA8UrUCo6JmWcKLwtUV6OVFjgZmtykji++Ul569n5bEt3/mUbvEHYMedhuyL9ueB1zDv9UvzE+OmYbY5OowdWi+abQ7o+QUUVWsajcbCipE0O0OoZxYdz/EszxB1g7HsTb1NOoiR8jUcTS3IAHTpw8Yqpzd3Z3xDI2scOUWi5XwZdjePY5uEGp4GnGh6z+8UxWhYx5K4P4VNlTsbkE4Hsv1VF42HrFNX5deh2eVVoj1uR/lcoLbjRtwQ5seON3Nc1/g37XX7un0Ve1BJtH0ysfywwXyU8AbCwRVM3ITwaEz0ozc3Ax+RAC/ArngCYbHgbUDB80zxS/WdCdAiHxb8Tjuf0N+PPlCo5saB54wy6G/ZDABV1HhoC
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/part-of: kube-prometheus-stack
+      name: kube-prometheus-stack-grafana
+      namespace: kube-prometheus-stack
+    type: Opaque
