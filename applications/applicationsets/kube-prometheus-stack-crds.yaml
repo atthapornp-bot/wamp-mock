@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kube-prometheus-stack-crds
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: local
+            server: https://kubernetes.default.svc
+            clusterName: wamp-nonprod
+            awsRegion: ap-southeast-1
+
+  template:
+    metadata:
+      name: "{{name}}-kube-prometheus-stack-crds"
+
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+          - Replace=true
+
+      project: cluster-ops
+
+      destination:
+        namespace: kube-prometheus-stack
+        server: "{{server}}"
+
+      ## Workaround for CRDs annotation too long issues by separating Application and Replace=true
+      ## https://github.com/prometheus-operator/prometheus-operator/issues/4439#issuecomment-1030198014
+      source:
+        repoURL: https://github.com/prometheus-community/helm-charts.git
+        path: charts/kube-prometheus-stack/charts/crds/crds/
+        targetRevision: kube-prometheus-stack-62.7.0 # Always sync version with kube-prometheus-stack
+        directory:
+          recurse: true
