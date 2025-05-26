@@ -57,12 +57,12 @@ spec:
             ## https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network
             # - name: controller.dnsPolicy
             #   value: ClusterFirstWithHostNet
-            # - name: controller.reportNodeInternalIp
-            #   value: "true"
-            # - name: controller.hostNetwork
-            #   value: "true"
-            # - name: controller.hostPort.enabled
-            #   value: "true"
+            - name: controller.reportNodeInternalIp
+              value: "true"
+            - name: controller.hostNetwork
+              value: "true"
+            - name: controller.hostPort.enabled
+              value: "true"
             # - name: controller.kind
             #   value: DaemonSet
             # - name: controller.autoscaling.enabled
@@ -159,8 +159,8 @@ spec:
                 annotations-risk-level: "Critical"
 
               # https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network
-              dnsPolicy: ClusterFirst
-              reportNodeInternalIp: false
+              dnsPolicy: ClusterFirstWithHostNet
+              reportNodeInternalIp: true
 
               # https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network
               hostNetwork: true
