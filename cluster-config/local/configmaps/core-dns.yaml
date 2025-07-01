@@ -34,3 +34,9 @@ data:
           10.200.51.101 registry.muangthai.co.th
         }
     }
+    mailgateway.muangthai.co.th:53 {
+        errors
+        hosts {
+          10.200.7.18 mailgateway.muangthai.co.th
+        }
+    }
