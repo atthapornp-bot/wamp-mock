@@ -104,11 +104,12 @@ spec:
                     Keep_Log Off
                     K8S-Logging.Parser On
                     K8S-Logging.Exclude Off
-                    Annotations Off
+                    Annotations On
                     Labels On
 
                 # Filter to ONLY include logs from wamp-sit and wamp-uat namespaces
-                # This filter drops all logs that don't match our target namespaces
+                # This provides comprehensive monitoring of these specific environments
+                # Every pod in these namespaces will be monitored and organized individually
                 [FILTER]
                     Name grep
                     Match kube.*
@@ -117,7 +118,7 @@ spec:
                 # Add timestamp and format logs
                 [FILTER]
                     Name modify
-                    Match *
+                    Match kube.*
                     Add source_type kubernetes
                     Add cluster_name ${CLUSTER_NAME}
                     Add aws_region ${AWS_REGION}
