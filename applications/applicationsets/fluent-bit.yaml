@@ -38,7 +38,7 @@ spec:
       source:
         repoURL: https://fluent.github.io/helm-charts
         chart: fluent-bit
-        targetRevision: "0.21.7"  # Use latest stable version
+        targetRevision: "0.50.0"  # Use latest stable version
         helm:
           releaseName: fluent-bit
           values: |
@@ -106,6 +106,13 @@ spec:
                     K8S-Logging.Exclude Off
                     Annotations Off
                     Labels On
+
+                # Filter to ONLY include logs from wamp-sit and wamp-uat namespaces
+                # This filter drops all logs that don't match our target namespaces
+                [FILTER]
+                    Name grep
+                    Match kube.*
+                    Regex kubernetes.namespace_name ^(wamp-sit|wamp-uat)$
                 
                 # Add timestamp and format logs
                 [FILTER]
@@ -114,6 +121,7 @@ spec:
                     Add source_type kubernetes
                     Add cluster_name ${CLUSTER_NAME}
                     Add aws_region ${AWS_REGION}
+                    Add monitored_namespaces wamp-sit,wamp-uat
               
               # Output plugins - where logs go
               outputs: |
@@ -123,7 +131,7 @@ spec:
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     total_file_size 50M
-                    s3_key_format /kubernetes-logs/year=%Y/month=%m/day=%d/hour=%H/%Y-%m-%d-%H-%M-%S
+                    s3_key_format /kubernetes-logs/namespace=\${kubernetes['namespace_name']}/app=\${kubernetes['labels']['app']}/year=%Y/month=%m/day=%d/hour=%H/\${kubernetes['pod_name']}-%Y%m%d-%H%M%S
                     s3_key_format_tag_delimiters .-
                     upload_timeout 10m
                     preserve_data_ordering On
@@ -162,6 +170,16 @@ spec:
                 value: "wamp-nonprod"
               - name: AWS_REGION
                 value: "ap-southeast-1"
+              - name: AWS_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_ACCESS_KEY_ID
+              - name: AWS_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_SECRET_ACCESS_KEY
 
             ## @param affinity [object] Affinity for Sealed Secret pods assignment
             ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
