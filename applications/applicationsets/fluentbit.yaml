@@ -1,0 +1,218 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: fluent-bit
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  generators:
+    - list:
+        elements:
+          - name: local
+            server: https://kubernetes.default.svc
+            clusterName: wamp-nonprod
+            awsRegion: ap-southeast-1
+
+  template:
+    metadata:
+      name: "{{name}}-fluent-bit"
+
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+
+      project: cluster-ops
+
+      destination:
+        namespace: logging
+        server: "{{server}}"
+
+      source:
+        repoURL: https://fluent.github.io/helm-charts
+        chart: fluent-bit
+        targetRevision: "0.21.7"  # Use latest stable version
+        helm:
+          releaseName: fluent-bit
+          values: |
+            # DaemonSet ensures FluentBit runs on every node
+            kind: DaemonSet
+            
+            # Resource management - important for production
+            resources:
+              limits:
+                cpu: 200m
+                memory: 200Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            
+            # Service account with necessary permissions
+            serviceAccount:
+              create: true
+              annotations:
+                # This annotation links to IAM role for S3 access (dev account)
+                eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
+            
+            # Core FluentBit configuration
+            config:
+              # Service configuration - defines global behavior
+              service: |
+                [SERVICE]
+                    Daemon Off
+                    Flush 1
+                    Log_Level info
+                    Parsers_File parsers.conf
+                    HTTP_Server On
+                    HTTP_Listen 0.0.0.0
+                    HTTP_Port 2020
+                    Health_Check On
+              
+              # Input plugins - where logs come from
+              inputs: |
+                [INPUT]
+                    Name tail
+                    Path /var/log/containers/*.log
+                    multiline.parser docker, cri
+                    Tag kube.*
+                    Mem_Buf_Limit 50MB
+                    Skip_Long_Lines On
+                    
+                [INPUT]
+                    Name systemd
+                    Tag host.*
+                    Systemd_Filter _SYSTEMD_UNIT=kubelet.service
+                    Systemd_Filter _SYSTEMD_UNIT=docker.service
+              
+              # Filters - transform and enrich logs
+              filters: |
+                # Parse Kubernetes metadata
+                [FILTER]
+                    Name kubernetes
+                    Match kube.*
+                    Kube_URL https://kubernetes.default.svc:443
+                    Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                    Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
+                    Merge_Log On
+                    Keep_Log Off
+                    K8S-Logging.Parser On
+                    K8S-Logging.Exclude Off
+                    Annotations Off
+                    Labels On
+                
+                # Add timestamp and format logs
+                [FILTER]
+                    Name modify
+                    Match *
+                    Add source_type kubernetes
+                    Add cluster_name ${CLUSTER_NAME}
+                    Add aws_region ${AWS_REGION}
+              
+              # Output plugins - where logs go
+              outputs: |
+                [OUTPUT]
+                    Name s3
+                    Match kube.*
+                    bucket wamp-nonprod-s3
+                    region ${AWS_REGION}
+                    total_file_size 50M
+                    s3_key_format /kubernetes-logs/year=%Y/month=%m/day=%d/hour=%H/%Y-%m-%d-%H-%M-%S
+                    s3_key_format_tag_delimiters .-
+                    upload_timeout 10m
+                    preserve_data_ordering On
+                    storage_class STANDARD_IA
+                    
+                [OUTPUT]
+                    Name s3
+                    Match host.*
+                    bucket wamp-nonprod-s3
+                    region ${AWS_REGION}
+                    total_file_size 50M
+                    s3_key_format /host-logs/year=%Y/month=%m/day=%d/hour=%H/%Y-%m-%d-%H-%M-%S
+                    upload_timeout 10m
+                    preserve_data_ordering On
+                    storage_class STANDARD_IA
+              
+              # Custom parsers for different log formats
+              customParsers: |
+                [PARSER]
+                    Name docker_no_time
+                    Format json
+                    Time_Keep Off
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L
+                    
+                [PARSER]
+                    Name containerd
+                    Format regex
+                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+            # Environment variables for configuration
+            env:
+              - name: CLUSTER_NAME
+                value: "wamp-nonprod"
+              - name: AWS_REGION
+                value: "ap-southeast-1"
+
+            ## @param affinity [object] Affinity for Sealed Secret pods assignment
+            ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                          - linux
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 3
+                    preference:
+                      matchExpressions:
+                        - key: project
+                          operator: In
+                          values:
+                            - cluster-ops
+                  - weight: 2
+                    preference:
+                      matchExpressions:
+                        - key: environment
+                          operator: In
+                          values:
+                            - critical
+                  - weight: 1
+                    preference:
+                      matchExpressions:
+                        - key: eks.amazonaws.com/capacityType
+                          operator: In
+                          values:
+                            - ON_DEMAND
+
+            ## @section Metrics parameters
+            metrics:
+              ## Prometheus Operator ServiceMonitor configuration
+              serviceMonitor:
+                ## @param metrics.serviceMonitor.enabled Specify if a ServiceMonitor will be deployed for Prometheus Operator
+                enabled: false
+                ## @param metrics.serviceMonitor.namespace Namespace where Prometheus Operator is running in
+                namespace: kube-prometheus-stack
+
+              ## Grafana dashboards configuration
+              dashboards:
+                ## @param metrics.dashboards.create Specifies whether a ConfigMap with a Grafana dashboard configuration should be created
+                ## ref https://github.com/helm/charts/tree/master/stable/grafana#configuration
+                create: false
+                ## @param metrics.dashboards.namespace Namespace where Grafana dashboard ConfigMap is deployed
+                namespace: kube-prometheus-stack
+                ## @param metrics.dashboards.labels Extra labels to be added to the Grafana dashboard ConfigMap
+                labels:
+                  grafana_dashboard: 1
