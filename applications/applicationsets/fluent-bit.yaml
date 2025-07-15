@@ -124,7 +124,7 @@ spec:
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     total_file_size 50M
-                    s3_key_format /kubernetes-logs/$TAG[1]/$TAG[2]/year=%Y/month=%m/day=%d/hour=%H/$TAG[3]/$TAG[1]-$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S
+                    s3_key_format /kubernetes-logs/$TAG[1]/$TAG[2]/year=%Y/month=%m/day=%d/hour=%H/$TAG[3]/$TAG[3]-%Y%m%d-%H%M%S.log
                     s3_key_format_tag_delimiters .
                     upload_timeout 10m
                     preserve_data_ordering On
