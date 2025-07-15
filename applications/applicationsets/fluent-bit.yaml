@@ -114,17 +114,6 @@ spec:
                     Labels On
                     Buffer_Size 256k
                     
-                # Parse container runtime logs (containerd format)
-                [FILTER]
-                    Name parser
-                    Match kube.*
-                    Key_Name log
-                    Parser containerd_eks
-                    Parser containerd
-                    Parser cri
-                    Preserve_Key On
-                    Reserve_Data On
-                    
                 # Handle multiline logs (stack traces, etc.) using built-in multiline filter
                 [FILTER]
                     Name multiline
