@@ -77,54 +77,16 @@ spec:
               
               # Input plugins - where logs come from
               inputs: |
-                # Primary input: Container logs from /var/log/containers
                 [INPUT]
                     Name tail
                     Path /var/log/containers/*.log
                     multiline.parser docker, cri
                     Tag kube.*
                     Mem_Buf_Limit 50MB
-                    Skip_Long_Lines On
-                    
-                # Secondary input: Pod logs from /var/log/pods
-                [INPUT]
-                    Name tail
-                    Path /var/log/pods/*/*/*.log
-                    multiline.parser docker, cri
-                    Tag kube.pods
-                    Mem_Buf_Limit 50MB
-                    Skip_Long_Lines On
-                    Path_Key filepath
-                    Exclude_Path /var/log/pods/kube-system_*/*/*.log
               
               # Filters - transform and enrich logs
               filters: |
-                # Parse pod information from file paths for pods logs
-                [FILTER]
-                    Name parser
-                    Match kube.pods
-                    Key_Name filepath
-                    Parser pods_path_parser
-                    Reserve_Data On
-                    
-                # Extract namespace and pod name from combined field
-                [FILTER]
-                    Name parser
-                    Match kube.pods
-                    Key_Name namespace_pod_uid
-                    Parser pod_name_parser
-                    Reserve_Data On
-                    
-                # Create Kubernetes metadata for pods logs
-                [FILTER]
-                    Name modify
-                    Match kube.pods
-                    Copy pod_namespace kubernetes.namespace_name
-                    Copy pod_name kubernetes.pod_name
-                    Copy container_name kubernetes.container_name
-                    Add log_source var_log_pods
-                
-                # Parse Kubernetes metadata for container logs
+                # Parse Kubernetes metadata
                 [FILTER]
                     Name kubernetes
                     Match kube.*
@@ -137,14 +99,16 @@ spec:
                     K8S-Logging.Exclude Off
                     Annotations On
                     Labels On
-                
+
                 # Filter to ONLY include logs from wamp-sit and wamp-uat namespaces
+                # This provides comprehensive monitoring of these specific environments
+                # Every pod in these namespaces will be monitored and organized individually
                 [FILTER]
                     Name grep
                     Match kube.*
                     Regex kubernetes.namespace_name ^(wamp-sit|wamp-uat)$
                 
-                # Add additional metadata and formatting
+                # Add timestamp and format logs
                 [FILTER]
                     Name modify
                     Match kube.*
@@ -158,7 +122,7 @@ spec:
                 [OUTPUT]
                     Name s3
                     Match kube.*
-                    bucket YOUR_S3_BUCKET_NAME
+                    bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     total_file_size 50M
                     s3_key_format /kubernetes-logs/namespace=\${kubernetes['namespace_name']}/app=\${kubernetes['labels']['app']}/year=%Y/month=%m/day=%d/hour=%H/\${kubernetes['pod_name']}-%Y%m%d-%H%M%S
@@ -182,29 +146,6 @@ spec:
                     Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
                     Time_Key time
                     Time_Format %Y-%m-%dT%H:%M:%S.%L%z
-                    
-                # Parser for extracting pod information from /var/log/pods paths
-                [PARSER]
-                    Name pods_path_parser
-                    Format regex
-                    Regex ^/var/log/pods/(?<namespace_pod_uid>[^/]+)/(?<container_name>[^/]+)/(?<log_file>\d+\.log)$
-                    Time_Keep Off
-                    
-                # Parser to extract namespace and pod name from combined field
-                [PARSER]
-                    Name pod_name_parser
-                    Format regex
-                    Regex ^(?<pod_namespace>.+?)_(?<pod_name>.+?)_(?<pod_uid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$
-                    Time_Keep Off
-                    
-                # Parser for pods log content format
-                [PARSER]
-                    Name pods_parser
-                    Format regex
-                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
-                    Time_Key time
-                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
-                    Time_Keep On
 
             # Environment variables for configuration
             env:
@@ -222,6 +163,19 @@ spec:
                   secretKeyRef:
                     name: fluent-bit
                     key: AWS_SECRET_ACCESS_KEY
+
+            # Tolerations to allow FluentBit to run on all nodes
+            # This ensures comprehensive log collection across the entire cluster
+            tolerations:
+              # Allow scheduling on nodes with NoSchedule taints
+              - operator: Exists
+                effect: NoSchedule
+              # Allow scheduling on nodes with PreferNoSchedule taints  
+              - operator: Exists
+                effect: PreferNoSchedule
+              # Allow scheduling on nodes with NoExecute taints
+              - operator: Exists
+                effect: NoExecute
 
             ## @param affinity [object] Affinity for Sealed Secret pods assignment
             ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
