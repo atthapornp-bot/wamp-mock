@@ -122,19 +122,6 @@ spec:
                     Skip_Empty_Lines On
                     Refresh_Interval 10
                     Read_from_Head False
-                    
-                # Debug: Check what logs are actually available
-                [INPUT]
-                    Name exec
-                    Command find /var/log/containers -name "*wamp-sit*" -o -name "*wamp-uat*" | head -10
-                    Interval_Sec 60
-                    Tag debug.containers
-                    
-                [INPUT]
-                    Name exec
-                    Command find /var/log/pods -name "*wamp-sit*" -o -name "*wamp-uat*" | head -10
-                    Interval_Sec 60
-                    Tag debug.pods
               
               # Filters - transform and enrich logs
               filters: |
@@ -174,12 +161,6 @@ spec:
                     Match kube.*
                     multiline.key_content log
                     multiline.parser java, python, go
-                
-                # Debug filter to see what we're getting
-                [FILTER]
-                    Name modify
-                    Match debug.*
-                    Add log_discovery true
                     
                 # Add metadata for all kube logs
                 [FILTER]
@@ -212,12 +193,6 @@ spec:
                     upload_timeout 10m
                     preserve_data_ordering On
                     storage_class STANDARD_IA
-                    
-                # Debug output to see what log files are found
-                [OUTPUT]
-                    Name stdout
-                    Match debug.*
-                    Format json_lines
               
               # Custom parsers for different log formats
               customParsers: |
