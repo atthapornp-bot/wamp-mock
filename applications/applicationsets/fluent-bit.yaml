@@ -113,7 +113,7 @@ spec:
                 [FILTER]
                     Name rewrite_tag
                     Match kube.*
-                    Rule $kubernetes['namespace_name'] ^(wamp-sit|wamp-uat)$ s3.${kubernetes['namespace_name']}.${kubernetes['labels']['app']}.${kubernetes['container_name']} false
+                    Rule $kubernetes['namespace_name'] ^(wamp-sit|wamp-uat)$ s3.$kubernetes['namespace_name'].$kubernetes['labels']['app'].$kubernetes['container_name'] false
                     Emitter_Name re_emitted
                 
                 # Add timestamp and format logs
@@ -133,8 +133,8 @@ spec:
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     total_file_size 50M
-                    s3_key_format /kubernetes-logs/namespace=%t[1]/app=%t[2]/container=%t[3]/year=%Y/month=%m/day=%d/hour=%H/%t[1]-%t[2]-%t[3]-%Y%m%d-%H%M%S
-                    s3_key_format_tag_delimiters .-
+                    s3_key_format /kubernetes-logs/$TAG[1]/$TAG[2]/$TAG[3]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]-$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S
+                    s3_key_format_tag_delimiters .
                     upload_timeout 10m
                     preserve_data_ordering On
                     storage_class STANDARD_IA
