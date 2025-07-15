@@ -115,15 +115,6 @@ spec:
                     Match kube.*
                     Rule $kubernetes['namespace_name'] ^(wamp-sit|wamp-uat)$ s3.$kubernetes['namespace_name'].$kubernetes['labels']['app'].$kubernetes['container_name'] false
                     Emitter_Name re_emitted
-                
-                # Add timestamp and format logs
-                [FILTER]
-                    Name modify
-                    Match s3.*
-                    Add source_type kubernetes
-                    Add cluster_name ${CLUSTER_NAME}
-                    Add aws_region ${AWS_REGION}
-                    Add monitored_namespaces wamp-sit,wamp-uat
               
               # Output plugins - where logs go
               outputs: |
