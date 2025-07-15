@@ -108,10 +108,18 @@ spec:
                     Match kube.*
                     Regex kubernetes.namespace_name ^(wamp-sit|wamp-uat)$
                 
+                # Rewrite tags to organize logs by namespace, app, and container
+                # This creates structured tags for better S3 organization
+                [FILTER]
+                    Name rewrite_tag
+                    Match kube.*
+                    Rule $kubernetes['namespace_name'] ^(wamp-sit|wamp-uat)$ s3.${kubernetes['namespace_name']}.${kubernetes['labels']['app']}.${kubernetes['container_name']} false
+                    Emitter_Name re_emitted
+                
                 # Add timestamp and format logs
                 [FILTER]
                     Name modify
-                    Match kube.*
+                    Match s3.*
                     Add source_type kubernetes
                     Add cluster_name ${CLUSTER_NAME}
                     Add aws_region ${AWS_REGION}
@@ -121,11 +129,11 @@ spec:
               outputs: |
                 [OUTPUT]
                     Name s3
-                    Match kube.*
+                    Match s3.*
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     total_file_size 50M
-                    s3_key_format /kubernetes-logs/namespace=\${kubernetes['namespace_name']}/app=\${kubernetes['labels']['app']}/year=%Y/month=%m/day=%d/hour=%H/\${kubernetes['pod_name']}-%Y%m%d-%H%M%S
+                    s3_key_format /kubernetes-logs/namespace=%t[1]/app=%t[2]/container=%t[3]/year=%Y/month=%m/day=%d/hour=%H/%t[1]-%t[2]-%t[3]-%Y%m%d-%H%M%S
                     s3_key_format_tag_delimiters .-
                     upload_timeout 10m
                     preserve_data_ordering On
