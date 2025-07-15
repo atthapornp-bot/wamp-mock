@@ -77,7 +77,7 @@ spec:
               
               # Input plugins - where logs come from
               inputs: |
-                # Primary: Container logs from /var/log/containers (symlinks)
+                # Strategy 1: Standard container logs (symlinks)
                 [INPUT]
                     Name tail
                     Path /var/log/containers/*.log
@@ -89,13 +89,57 @@ spec:
                     Refresh_Interval 10
                     Read_from_Head False
                     
+                # Strategy 2: Direct pod logs from containerd
+                [INPUT]
+                    Name tail
+                    Path /var/log/pods/*/*/*.log
+                    Parser containerd
+                    Tag kube.pods.*
+                    Mem_Buf_Limit 50MB
+                    Skip_Long_Lines On
+                    Skip_Empty_Lines On
+                    Refresh_Interval 10
+                    Read_from_Head False
+                    
+                # Strategy 3: CRI-O logs (alternative runtime)
+                [INPUT]
+                    Name tail
+                    Path /var/lib/containers/storage/overlay-containers/*/userdata/ctr.log
+                    Parser containerd
+                    Tag kube.crio.*
+                    Mem_Buf_Limit 50MB
+                    Skip_Long_Lines On
+                    Skip_Empty_Lines On
+                    Refresh_Interval 10
+                    Read_from_Head False
+                    
+                # Strategy 4: Docker logs (if Docker runtime is used)
+                [INPUT]
+                    Name tail
+                    Path /var/lib/docker/containers/*/*.log
+                    Parser docker
+                    Tag kube.docker.*
+                    Mem_Buf_Limit 50MB
+                    Skip_Long_Lines On
+                    Skip_Empty_Lines On
+                    Refresh_Interval 10
+                    Read_from_Head False
+                    
+                # Strategy 5: Systemd journal for container logs
+                [INPUT]
+                    Name systemd
+                    Tag systemd.containers.*
+                    Systemd_Filter _TRANSPORT=journal
+                    Systemd_Filter CONTAINER_NAME=*
+                    Read_From_Tail On
+                    
               
               # Filters - transform and enrich logs
               filters: |
-                # Parse Kubernetes metadata for container logs
+                # Parse Kubernetes metadata for all container log sources
                 [FILTER]
                     Name kubernetes
-                    Match kube.containers.*
+                    Match kube.*
                     Kube_URL https://kubernetes.default.svc:443
                     Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
                     Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -107,20 +151,23 @@ spec:
                     Labels On
                     Buffer_Size 256k
                     
-                # Parse Kubernetes metadata for pod logs
+                # Parse systemd journal container logs
                 [FILTER]
-                    Name kubernetes
-                    Match kube.pods.*
-                    Kube_URL https://kubernetes.default.svc:443
-                    Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                    Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
-                    Merge_Log On
-                    Keep_Log Off
-                    K8S-Logging.Parser On
-                    K8S-Logging.Exclude Off
-                    Annotations On
-                    Labels On
-                    Buffer_Size 256k
+                    Name modify
+                    Match systemd.containers.*
+                    Add source_type systemd_containers
+                    
+                # Filter to ONLY include logs from wamp-sit and wamp-uat namespaces
+                [FILTER]
+                    Name grep
+                    Match kube.*
+                    Regex kubernetes.namespace_name ^(wamp-sit|wamp-uat)$
+                    
+                # Filter systemd logs for our namespaces (if container name contains namespace)
+                [FILTER]
+                    Name grep
+                    Match systemd.containers.*
+                    Regex CONTAINER_NAME (wamp-sit|wamp-uat)
                     
                 # Handle multiline logs (stack traces, etc.)
                 [FILTER]
@@ -129,10 +176,10 @@ spec:
                     multiline.key_content log
                     multiline.parser java, python, go
                     
-                # Add metadata for all kube logs
+                # Add metadata for all logs
                 [FILTER]
                     Name modify
-                    Match kube.*
+                    Match kube.*,systemd.*
                     Add source_type kubernetes
                     Add cluster_name ${CLUSTER_NAME}
                     Add aws_region ${AWS_REGION}
@@ -141,17 +188,17 @@ spec:
                 # Add EKS specific metadata
                 [FILTER]
                     Name modify
-                    Match kube.*
+                    Match kube.*,systemd.*
                     Add eks_cluster wamp-nonprod
                     Add platform aws-eks
                     Add containerd_version latest
               
               # Output plugins - where logs go
               outputs: |
-                # Main S3 output for Kubernetes logs
+                # Main S3 output for all collected logs
                 [OUTPUT]
                     Name s3
-                    Match kube.*
+                    Match kube.*,systemd.*
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     total_file_size 50M
