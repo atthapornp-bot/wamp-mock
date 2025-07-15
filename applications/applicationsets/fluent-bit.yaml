@@ -81,7 +81,7 @@ spec:
                 [INPUT]
                     Name tail
                     Path /var/log/containers/*.log
-                    multiline.parser containerd, cri, docker
+                    multiline.parser containerd_multiline, docker, cri
                     Tag kube.*
                     Mem_Buf_Limit 50MB
                     Skip_Long_Lines On
@@ -134,13 +134,6 @@ spec:
                     Parser cri
                     Preserve_Key On
                     Reserve_Data On
-                    
-                # Handle multiline logs (stack traces, etc.)
-                [FILTER]
-                    Name multiline
-                    Match kube.*
-                    multiline.key_content log
-                    multiline.parser containerd_multiline
 
                 # Filter to ONLY include logs from wamp-sit and wamp-uat namespaces
                 # This provides comprehensive monitoring of these specific environments
@@ -231,13 +224,31 @@ spec:
                     Time_Format %Y-%m-%dT%H:%M:%S.%LZ
                     Time_Keep On
                     
-                # Multiline parser for stack traces and multi-line logs
+              # Multiline parsers for handling stack traces and multi-line logs
+              multilineParsers: |
+                # Multiline parser for containerd logs with stack traces
                 [MULTILINE_PARSER]
                     name containerd_multiline
                     type regex
                     flush_timeout 1000
                     rule "start_state" "/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/" "cont"
                     rule "cont" "/^(?!\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/" "cont"
+                    
+                # Java stack traces multiline parser
+                [MULTILINE_PARSER]
+                    name java_multiline
+                    type regex
+                    flush_timeout 1000
+                    rule "start_state" "/^(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}).*(?:Exception|Error|Caused by)/" "java"
+                    rule "java" "/^[\s\t]+.*at.*|^[\s\t]+.*\.{3}.*more|^[\s\t]*Caused by:/" "java"
+                    
+                # Python traceback multiline parser
+                [MULTILINE_PARSER]
+                    name python_multiline
+                    type regex
+                    flush_timeout 1000
+                    rule "start_state" "/^Traceback \(most recent call last\):/" "python"
+                    rule "python" "/^[\s\t]+.*|^[a-zA-Z].*Error:/" "python"
 
             # Environment variables for configuration
             env:
