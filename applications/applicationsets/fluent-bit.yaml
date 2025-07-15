@@ -92,7 +92,7 @@ spec:
                 # Strategy 2: Direct pod logs from containerd - target namespaces only
                 [INPUT]
                     Name tail
-                    Path /var/log/pods/wamp-sit_*/*.log,/var/log/pods/wamp-uat_*/*.log
+                    Path /var/log/pods/*/*.log,/var/log/pods/*/*.log
                     Parser containerd
                     Tag kube.*
                     Mem_Buf_Limit 50MB
