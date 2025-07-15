@@ -93,7 +93,7 @@ spec:
                 [INPUT]
                     Name tail
                     Path /var/log/pods/*/*.log,/var/log/pods/*/*.log
-                    Parser containerd
+                    multiline.parser docker, cri
                     Tag kube.*
                     Mem_Buf_Limit 50MB
                     Skip_Long_Lines On
