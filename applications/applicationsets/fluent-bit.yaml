@@ -80,7 +80,7 @@ spec:
                 # Primary: Container logs from /var/log/containers (symlinks)
                 [INPUT]
                     Name tail
-                    Path /var/log/containers/*_wamp-sit_*.log
+                    Path /var/log/containers/*.log
                     multiline.parser docker, cri
                     Tag kube.containers.*
                     Mem_Buf_Limit 50MB
@@ -89,39 +89,6 @@ spec:
                     Refresh_Interval 10
                     Read_from_Head False
                     
-                [INPUT]
-                    Name tail
-                    Path /var/log/containers/*_wamp-uat_*.log
-                    multiline.parser docker, cri
-                    Tag kube.containers.*
-                    Mem_Buf_Limit 50MB
-                    Skip_Long_Lines On
-                    Skip_Empty_Lines On
-                    Refresh_Interval 10
-                    Read_from_Head False
-                    
-                # Alternative: Direct pod logs from /var/log/pods
-                [INPUT]
-                    Name tail
-                    Path /var/log/pods/wamp-sit_*/*/*.log
-                    Parser containerd
-                    Tag kube.pods.*
-                    Mem_Buf_Limit 50MB
-                    Skip_Long_Lines On
-                    Skip_Empty_Lines On
-                    Refresh_Interval 10
-                    Read_from_Head False
-                    
-                [INPUT]
-                    Name tail
-                    Path /var/log/pods/wamp-uat_*/*/*.log
-                    Parser containerd
-                    Tag kube.pods.*
-                    Mem_Buf_Limit 50MB
-                    Skip_Long_Lines On
-                    Skip_Empty_Lines On
-                    Refresh_Interval 10
-                    Read_from_Head False
               
               # Filters - transform and enrich logs
               filters: |
