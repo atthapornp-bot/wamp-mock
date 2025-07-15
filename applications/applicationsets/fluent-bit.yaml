@@ -112,14 +112,6 @@ spec:
                     Match kube.*
                     multiline.key_content log
                     multiline.parser java, python, go
-
-                # Filter to ONLY include logs from wamp-sit and wamp-uat namespaces
-                # This provides comprehensive monitoring of these specific environments
-                # Every pod in these namespaces will be monitored and organized individually
-                [FILTER]
-                    Name grep
-                    Match kube.*
-                    Regex kubernetes.namespace_name ^(wamp-sit|wamp-uat)$
                 
                 # Add timestamp and format logs with containerd metadata
                 [FILTER]
@@ -128,7 +120,6 @@ spec:
                     Add source_type kubernetes
                     Add cluster_name ${CLUSTER_NAME}
                     Add aws_region ${AWS_REGION}
-                    Add monitored_namespaces wamp-sit,wamp-uat
                     Add container_runtime containerd
                     Add log_source_path /var/log/containers
                     
