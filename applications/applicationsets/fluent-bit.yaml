@@ -166,10 +166,11 @@ spec:
               # Custom parsers for different log formats
               customParsers: |
                 [PARSER]
-                  Name    kube-pod-log
-                  Format  regex
-                  Reserve_Data true
-                  Regex   (?<namespace_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:_[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<pod_name>[^_]+)_(?<docker_id>.*)\.(?<container_name>.*)\..*\.log$
+                    Name    kube-pod-log
+                    Format  regex
+                    Reserve_Data true
+                    Regex   (?<namespace_name>[a-z0-9](?:[-a-z0-9]*[a-z0-9])?(?:_[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<pod_name>[^_]+)_(?<docker_id>.*)\.(?<container_name>.*)\..*\.log$
+                    
                 # Standard docker parser without time
                 [PARSER]
                     Name docker_no_time
