@@ -77,21 +77,29 @@ spec:
               
               # Input plugins - where logs come from
               inputs: |
+                # Primary input: Container logs from /var/log/containers
                 [INPUT]
                     Name tail
+                    Path /var/log/containers/*.log
+                    multiline.parser docker, cri
                     Tag kube.*
-                    multiline.parser cri, docker
-                    Path /var/log/pods/*/*/*log
+                    Mem_Buf_Limit 50MB
+                    Skip_Long_Lines On
+                    
+                # Secondary input: Pod logs from /var/log/pods
+                [INPUT]
+                    Name tail
+                    Path /var/log/pods/*/*/*.log
+                    multiline.parser docker, cri
+                    Tag kube.pods.*
+                    Mem_Buf_Limit 50MB
+                    Skip_Long_Lines On
+                    Exclude_Path /var/log/pods/kube-system_*/*/*.log
+                    Parser pods_parser
               
               # Filters - transform and enrich logs
               filters: |
-                # Exclude fluent-bit's own logs to prevent recursion
-                [FILTER]
-                    Name grep
-                    Match kube.*
-                    Exclude kubernetes.namespace_name ^(logging|kube-system|kube-public|kube-node-lease)$
-                    
-                # Parse Kubernetes metadata for all container log sources
+                # Parse Kubernetes metadata first - this adds namespace info
                 [FILTER]
                     Name kubernetes
                     Match kube.*
@@ -104,54 +112,33 @@ spec:
                     K8S-Logging.Exclude Off
                     Annotations On
                     Labels On
-                    Buffer_Size 256k
-                    
-                # Parse systemd journal container logs
-                [FILTER]
-                    Name modify
-                    Match systemd.containers.*
-                    Add source_type systemd_containers
-                    
+                
                 # Filter to ONLY include logs from wamp-sit and wamp-uat namespaces
+                # This provides comprehensive monitoring of these specific environments
+                # Every pod in these namespaces will be monitored and organized individually
                 [FILTER]
                     Name grep
                     Match kube.*
                     Regex kubernetes.namespace_name ^(wamp-sit|wamp-uat)$
-                    
-                # Handle multiline logs (stack traces, etc.)
-                [FILTER]
-                    Name multiline
-                    Match kube.*
-                    multiline.key_content log
-                    multiline.parser java, python, go
-                    
-                # Add metadata for all logs
+                
+                # Add additional metadata and formatting
                 [FILTER]
                     Name modify
-                    Match kube.*,systemd.*
+                    Match kube.*
                     Add source_type kubernetes
                     Add cluster_name ${CLUSTER_NAME}
                     Add aws_region ${AWS_REGION}
-                    Add container_runtime containerd
-                    
-                # Add EKS specific metadata
-                [FILTER]
-                    Name modify
-                    Match kube.*,systemd.*
-                    Add eks_cluster wamp-nonprod
-                    Add platform aws-eks
-                    Add containerd_version latest
+                    Add monitored_namespaces wamp-sit,wamp-uat
               
               # Output plugins - where logs go
               outputs: |
-                # Main S3 output for all collected logs
                 [OUTPUT]
                     Name s3
-                    Match kube.*,systemd.*
-                    bucket wamp-nonprod-s3
+                    Match kube.*
+                    bucket YOUR_S3_BUCKET_NAME
                     region ${AWS_REGION}
                     total_file_size 50M
-                    s3_key_format /kubernetes-logs/namespace=$kubernetes['namespace_name']/app=$kubernetes['labels']['app']/year=%Y/month=%m/day=%d/hour=%H/$kubernetes['pod_name']-%Y%m%d-%H%M%S
+                    s3_key_format /kubernetes-logs/namespace=\${kubernetes['namespace_name']}/app=\${kubernetes['labels']['app']}/year=%Y/month=%m/day=%d/hour=%H/\${kubernetes['pod_name']}-%Y%m%d-%H%M%S
                     s3_key_format_tag_delimiters .-
                     upload_timeout 10m
                     preserve_data_ordering On
@@ -159,7 +146,6 @@ spec:
               
               # Custom parsers for different log formats
               customParsers: |
-                # Standard docker parser without time
                 [PARSER]
                     Name docker_no_time
                     Format json
@@ -167,31 +153,20 @@ spec:
                     Time_Key time
                     Time_Format %Y-%m-%dT%H:%M:%S.%L
                     
-                # Containerd parser for EKS logs
                 [PARSER]
                     Name containerd
                     Format regex
                     Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
                     Time_Key time
                     Time_Format %Y-%m-%dT%H:%M:%S.%L%z
-                    Time_Keep On
                     
-                # CRI parser for container runtime interface
+                # Parser specifically for /var/log/pods format
                 [PARSER]
-                    Name cri
+                    Name pods_parser
                     Format regex
                     Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
                     Time_Key time
                     Time_Format %Y-%m-%dT%H:%M:%S.%L%z
-                    Time_Keep On
-                    
-                # Enhanced containerd parser for EKS with better error handling
-                [PARSER]
-                    Name containerd_eks
-                    Format regex
-                    Regex ^(?<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z) (?<stream>stdout|stderr) (?<logtag>[FP]) (?<message>.*)$
-                    Time_Key time
-                    Time_Format %Y-%m-%dT%H:%M:%S.%LZ
                     Time_Keep On
 
             # Environment variables for configuration
