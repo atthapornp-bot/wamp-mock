@@ -88,14 +88,6 @@ spec:
                     Skip_Empty_Lines On
                     Refresh_Interval 10
                     Read_from_Head False
-                    
-                # System service logs including containerd
-                [INPUT]
-                    Name systemd
-                    Tag host.*
-                    Systemd_Filter _SYSTEMD_UNIT=kubelet.service
-                    Systemd_Filter _SYSTEMD_UNIT=containerd.service
-                    Systemd_Filter _SYSTEMD_UNIT=docker.service
               
               # Filters - transform and enrich logs
               filters: |
@@ -158,17 +150,6 @@ spec:
                     total_file_size 50M
                     s3_key_format /kubernetes-logs/namespace=$kubernetes['namespace_name']/app=$kubernetes['labels']['app']/year=%Y/month=%m/day=%d/hour=%H/$kubernetes['pod_name']-%Y%m%d-%H%M%S
                     s3_key_format_tag_delimiters .-
-                    upload_timeout 10m
-                    preserve_data_ordering On
-                    storage_class STANDARD_IA
-                    
-                [OUTPUT]
-                    Name s3
-                    Match host.*
-                    bucket wamp-nonprod-s3
-                    region ${AWS_REGION}
-                    total_file_size 50M
-                    s3_key_format /host-logs/year=%Y/month=%m/day=%d/hour=%H/%Y-%m-%d-%H-%M-%S
                     upload_timeout 10m
                     preserve_data_ordering On
                     storage_class STANDARD_IA
