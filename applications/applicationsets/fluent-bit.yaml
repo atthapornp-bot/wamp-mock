@@ -170,7 +170,7 @@ spec:
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     total_file_size 50M
-                    s3_key_format /kubernetes-logs/namespace=\${kubernetes['namespace_name']}/app=\${kubernetes['labels']['app']}/year=%Y/month=%m/day=%d/hour=%H/\${kubernetes['pod_name']}-%Y%m%d-%H%M%S
+                    s3_key_format /kubernetes-logs/namespace=$kubernetes['namespace_name']/app=$kubernetes['labels']['app']/year=%Y/month=%m/day=%d/hour=%H/$kubernetes['pod_name']-%Y%m%d-%H%M%S
                     s3_key_format_tag_delimiters .-
                     upload_timeout 10m
                     preserve_data_ordering On
@@ -224,8 +224,6 @@ spec:
                     Time_Format %Y-%m-%dT%H:%M:%S.%LZ
                     Time_Keep On
                     
-              # Multiline parsers for handling stack traces and multi-line logs
-              multilineParsers: |
                 # Multiline parser for containerd logs with stack traces
                 [MULTILINE_PARSER]
                     name containerd_multiline
