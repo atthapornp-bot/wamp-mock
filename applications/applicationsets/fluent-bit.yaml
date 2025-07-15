@@ -92,7 +92,7 @@ spec:
                 # Strategy 2: Direct pod logs from containerd - target namespaces only
                 [INPUT]
                     Name tail
-                    Path /var/log/pods/wamp-sit_*/*/*.log,/var/log/pods/wamp-uat_*/*/*.log
+                    Path /var/log/pods/wamp-sit_*/*.log,/var/log/pods/wamp-uat_*/*.log
                     Parser containerd
                     Tag kube.*
                     Mem_Buf_Limit 50MB
@@ -100,34 +100,6 @@ spec:
                     Skip_Empty_Lines On
                     Refresh_Interval 10
                     Read_from_Head False
-                    
-                # Strategy 3: CRI-O logs (alternative runtime) - if needed
-                [INPUT]
-                    Name tail
-                    Path /var/lib/containers/storage/overlay-containers/*/userdata/ctr.log
-                    Parser containerd
-                    Tag kube.crio.*
-                    Mem_Buf_Limit 50MB
-                    Skip_Long_Lines On
-                    Skip_Empty_Lines On
-                    Refresh_Interval 10
-                    Read_from_Head False
-                    
-                # Strategy 4: Systemd journal for container logs - target namespaces only
-                [INPUT]
-                    Name systemd
-                    Tag systemd.containers.*
-                    Systemd_Filter _TRANSPORT=journal
-                    Systemd_Filter CONTAINER_NAME=*wamp-sit*
-                    Read_From_Tail On
-                    
-                [INPUT]
-                    Name systemd
-                    Tag systemd.containers.*
-                    Systemd_Filter _TRANSPORT=journal
-                    Systemd_Filter CONTAINER_NAME=*wamp-uat*
-                    Read_From_Tail On
-                    
               
               # Filters - transform and enrich logs
               filters: |
