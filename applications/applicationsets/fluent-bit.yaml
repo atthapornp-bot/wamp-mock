@@ -89,16 +89,6 @@ spec:
                     Refresh_Interval 10
                     Read_from_Head False
                     
-                # Containerd runtime logs
-                [INPUT]
-                    Name tail
-                    Path /var/log/pods/*/*/*.log
-                    Parser containerd
-                    Tag kube.pod.*
-                    Mem_Buf_Limit 50MB
-                    Skip_Long_Lines On
-                    Skip_Empty_Lines On
-                    
                 # System service logs including containerd
                 [INPUT]
                     Name systemd
