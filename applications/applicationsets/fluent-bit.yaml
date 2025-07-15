@@ -77,31 +77,31 @@ spec:
               
               # Input plugins - where logs come from
               inputs: |
-                # Strategy 1: Standard container logs (symlinks)
+                # Strategy 1: Standard container logs (symlinks) - target namespaces only
                 [INPUT]
                     Name tail
-                    Path /var/log/containers/*.log
+                    Path /var/log/containers/*_wamp-sit_*.log,/var/log/containers/*_wamp-uat_*.log
                     multiline.parser docker, cri
-                    Tag kube.containers.*
+                    Tag kube.*
                     Mem_Buf_Limit 50MB
                     Skip_Long_Lines On
                     Skip_Empty_Lines On
                     Refresh_Interval 10
                     Read_from_Head False
                     
-                # Strategy 2: Direct pod logs from containerd
+                # Strategy 2: Direct pod logs from containerd - target namespaces only
                 [INPUT]
                     Name tail
-                    Path /var/log/pods/*/*/*.log
+                    Path /var/log/pods/wamp-sit_*/*/*.log,/var/log/pods/wamp-uat_*/*/*.log
                     Parser containerd
-                    Tag kube.pods.*
+                    Tag kube.*
                     Mem_Buf_Limit 50MB
                     Skip_Long_Lines On
                     Skip_Empty_Lines On
                     Refresh_Interval 10
                     Read_from_Head False
                     
-                # Strategy 3: CRI-O logs (alternative runtime)
+                # Strategy 3: CRI-O logs (alternative runtime) - if needed
                 [INPUT]
                     Name tail
                     Path /var/lib/containers/storage/overlay-containers/*/userdata/ctr.log
@@ -113,29 +113,30 @@ spec:
                     Refresh_Interval 10
                     Read_from_Head False
                     
-                # Strategy 4: Docker logs (if Docker runtime is used)
-                [INPUT]
-                    Name tail
-                    Path /var/lib/docker/containers/*/*.log
-                    Parser docker
-                    Tag kube.docker.*
-                    Mem_Buf_Limit 50MB
-                    Skip_Long_Lines On
-                    Skip_Empty_Lines On
-                    Refresh_Interval 10
-                    Read_from_Head False
-                    
-                # Strategy 5: Systemd journal for container logs
+                # Strategy 4: Systemd journal for container logs - target namespaces only
                 [INPUT]
                     Name systemd
                     Tag systemd.containers.*
                     Systemd_Filter _TRANSPORT=journal
-                    Systemd_Filter CONTAINER_NAME=*
+                    Systemd_Filter CONTAINER_NAME=*wamp-sit*
+                    Read_From_Tail On
+                    
+                [INPUT]
+                    Name systemd
+                    Tag systemd.containers.*
+                    Systemd_Filter _TRANSPORT=journal
+                    Systemd_Filter CONTAINER_NAME=*wamp-uat*
                     Read_From_Tail On
                     
               
               # Filters - transform and enrich logs
               filters: |
+                # Exclude fluent-bit's own logs to prevent recursion
+                [FILTER]
+                    Name grep
+                    Match kube.*
+                    Exclude kubernetes.namespace_name ^(logging|kube-system|kube-public|kube-node-lease)$
+                    
                 # Parse Kubernetes metadata for all container log sources
                 [FILTER]
                     Name kubernetes
@@ -162,12 +163,6 @@ spec:
                     Name grep
                     Match kube.*
                     Regex kubernetes.namespace_name ^(wamp-sit|wamp-uat)$
-                    
-                # Filter systemd logs for our namespaces (if container name contains namespace)
-                [FILTER]
-                    Name grep
-                    Match systemd.containers.*
-                    Regex CONTAINER_NAME (wamp-sit|wamp-uat)
                     
                 # Handle multiline logs (stack traces, etc.)
                 [FILTER]
