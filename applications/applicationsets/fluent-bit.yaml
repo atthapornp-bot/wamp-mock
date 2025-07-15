@@ -77,36 +77,71 @@ spec:
               
               # Input plugins - where logs come from
               inputs: |
-                # Container logs from containerd (EKS default runtime) - wamp-sit namespace
+                # Primary: Container logs from /var/log/containers (symlinks)
                 [INPUT]
                     Name tail
                     Path /var/log/containers/*_wamp-sit_*.log
                     multiline.parser docker, cri
-                    Tag kube.*
+                    Tag kube.containers.*
                     Mem_Buf_Limit 50MB
                     Skip_Long_Lines On
                     Skip_Empty_Lines On
                     Refresh_Interval 10
                     Read_from_Head False
                     
-                # Container logs from containerd (EKS default runtime) - wamp-uat namespace
                 [INPUT]
                     Name tail
                     Path /var/log/containers/*_wamp-uat_*.log
                     multiline.parser docker, cri
-                    Tag kube.*
+                    Tag kube.containers.*
                     Mem_Buf_Limit 50MB
                     Skip_Long_Lines On
                     Skip_Empty_Lines On
                     Refresh_Interval 10
                     Read_from_Head False
+                    
+                # Alternative: Direct pod logs from /var/log/pods
+                [INPUT]
+                    Name tail
+                    Path /var/log/pods/wamp-sit_*/*/*.log
+                    Parser containerd
+                    Tag kube.pods.*
+                    Mem_Buf_Limit 50MB
+                    Skip_Long_Lines On
+                    Skip_Empty_Lines On
+                    Refresh_Interval 10
+                    Read_from_Head False
+                    
+                [INPUT]
+                    Name tail
+                    Path /var/log/pods/wamp-uat_*/*/*.log
+                    Parser containerd
+                    Tag kube.pods.*
+                    Mem_Buf_Limit 50MB
+                    Skip_Long_Lines On
+                    Skip_Empty_Lines On
+                    Refresh_Interval 10
+                    Read_from_Head False
+                    
+                # Debug: Check what logs are actually available
+                [INPUT]
+                    Name exec
+                    Command find /var/log/containers -name "*wamp-sit*" -o -name "*wamp-uat*" | head -10
+                    Interval_Sec 60
+                    Tag debug.containers
+                    
+                [INPUT]
+                    Name exec
+                    Command find /var/log/pods -name "*wamp-sit*" -o -name "*wamp-uat*" | head -10
+                    Interval_Sec 60
+                    Tag debug.pods
               
               # Filters - transform and enrich logs
               filters: |
-                # Parse Kubernetes metadata
+                # Parse Kubernetes metadata for container logs
                 [FILTER]
                     Name kubernetes
-                    Match kube.*
+                    Match kube.containers.*
                     Kube_URL https://kubernetes.default.svc:443
                     Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
                     Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -118,14 +153,35 @@ spec:
                     Labels On
                     Buffer_Size 256k
                     
-                # Handle multiline logs (stack traces, etc.) using built-in multiline filter
+                # Parse Kubernetes metadata for pod logs
+                [FILTER]
+                    Name kubernetes
+                    Match kube.pods.*
+                    Kube_URL https://kubernetes.default.svc:443
+                    Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                    Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
+                    Merge_Log On
+                    Keep_Log Off
+                    K8S-Logging.Parser On
+                    K8S-Logging.Exclude Off
+                    Annotations On
+                    Labels On
+                    Buffer_Size 256k
+                    
+                # Handle multiline logs (stack traces, etc.)
                 [FILTER]
                     Name multiline
                     Match kube.*
                     multiline.key_content log
                     multiline.parser java, python, go
                 
-                # Add timestamp and format logs with containerd metadata
+                # Debug filter to see what we're getting
+                [FILTER]
+                    Name modify
+                    Match debug.*
+                    Add log_discovery true
+                    
+                # Add metadata for all kube logs
                 [FILTER]
                     Name modify
                     Match kube.*
@@ -133,7 +189,6 @@ spec:
                     Add cluster_name ${CLUSTER_NAME}
                     Add aws_region ${AWS_REGION}
                     Add container_runtime containerd
-                    Add log_source_path /var/log/containers
                     
                 # Add EKS specific metadata
                 [FILTER]
@@ -145,6 +200,7 @@ spec:
               
               # Output plugins - where logs go
               outputs: |
+                # Main S3 output for Kubernetes logs
                 [OUTPUT]
                     Name s3
                     Match kube.*
@@ -156,6 +212,12 @@ spec:
                     upload_timeout 10m
                     preserve_data_ordering On
                     storage_class STANDARD_IA
+                    
+                # Debug output to see what log files are found
+                [OUTPUT]
+                    Name stdout
+                    Match debug.*
+                    Format json_lines
               
               # Custom parsers for different log formats
               customParsers: |
