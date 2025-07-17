@@ -66,56 +66,105 @@ spec:
               # Service configuration - defines global behavior
               service: |
                 [SERVICE]
+                    # Daemon Off means FluentBit runs as a DaemonSet
                     Daemon Off
-                    Flush 1
+                    # Flush interval - how often to send logs (in seconds)
+                    Flush 5
+                    # Set the logging level for Fluent Bit itself
                     Log_Level info
-                    Parsers_File parsers.conf
+                    # HTTP server for health checks and metrics
                     HTTP_Server On
                     HTTP_Listen 0.0.0.0
                     HTTP_Port 2020
-                    Health_Check On
+                    # Storage settings for buffering
+                    storage.path  /var/log/flb-storage/
+                    storage.sync  normal
+                    storage.checksum off
+                    storage.backlog.mem_limit 50M
               
               # Input plugins - where logs come from
               inputs: |
                 [INPUT]
-                    Name tail
-                    Path /var/log/containers/*.log
-                    multiline.parser docker, cri
-                    Tag kube.*
-                    Mem_Buf_Limit 50MB
+                    # Use the tail input plugin to read container logs
+                    Name              tail
+                    # Path where Kubernetes stores container logs
+                    Path              /var/log/containers/*.log
+                    # Exclude Fluent Bit's own logs to prevent circular logging
+                    Exclude_Path      /var/log/containers/*fluent-bit*.log
+                    # Use CRI parser since most K8s clusters use containerd/CRI-O
+                    Parser            cri
+                    # Tag pattern - this creates structured tags for filtering
+                    Tag               kube.*
+                    # Memory buffer limit per file
+                    Mem_Buf_Limit     50MB
+                    # Skip long lines instead of failing
+                    Skip_Long_Lines   On
+                    # Refresh interval for discovering new files
+                    Refresh_Interval  10
+                    # Enable multiline support for stack traces
+                    Multiline.parser  cri
               
               # Filters - transform and enrich logs
               filters: |
-                # Parse Kubernetes metadata
+                # First filter: Extract Kubernetes metadata from file paths and container info
                 [FILTER]
-                    Name kubernetes
-                    Match kube.*
-                    Kube_URL https://kubernetes.default.svc:443
-                    Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                    Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
-                    Merge_Log On
-                    Keep_Log Off
-                    K8S-Logging.Parser On
-                    K8S-Logging.Exclude Off
-                    Annotations On
-                    Labels On
+                    Name                kubernetes
+                    Match               kube.*
+                    # Location of Kubernetes API
+                    Kube_URL            https://kubernetes.default.svc:443
+                    Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                    Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
+                    # Tag prefix for the kubernetes filter
+                    Kube_Tag_Prefix     kube.var.log.containers.
+                    # Merge log record with Kubernetes metadata
+                    Merge_Log           On
+                    # Keep original log field
+                    Keep_Log            Off
+                    # Add Kubernetes annotations as metadata
+                    K8S-Logging.Parser  On
+                    K8S-Logging.Exclude On
+                    # Add readable labels
+                    Labels              On
+                    Annotations         On
+                    # Buffer size for HTTP requests to K8s API
+                    Buffer_Size         32k
 
-                # Filter to ONLY include logs from wamp-sit and wamp-uat namespaces
-                # This provides comprehensive monitoring of these specific environments
-                # Every pod in these namespaces will be monitored and organized individually
+                # Second filter: Exclude system containers and namespaces
                 [FILTER]
-                    Name grep
-                    Match kube.*
-                    Regex kubernetes.namespace_name ^(wamp-sit|wamp-uat)$
+                    Name    grep
+                    Match   kube.*
+                    # Exclude system namespaces - these contain infrastructure pods
+                    Exclude kubernetes_namespace_name ^(kube-system|kube-public|kube-node-lease|logging|istio-system|cert-manager|ingress-nginx)$
+
+                # Third filter: Exclude specific system containers by name patterns
+                [FILTER]
+                    Name    grep
+                    Match   kube.*
+                    # Exclude common system containers (pause, proxy, dns, etc.)
+                    Exclude kubernetes_container_name ^(pause|kube-proxy|coredns|flannel|calico.*|weave.*|cilium.*|kindnet.*|local-path-provisioner)$
                 
-                # Rewrite tags to organize logs by namespace, app, and container
-                # This creates structured tags for better S3 organization
+                # Fourth filter: Only include containers that have an app-related label
+                # This ensures we only get application containers, not random system containers
+                # We check for either the simple 'app' label or the recommended 'app.kubernetes.io/name' label
                 [FILTER]
-                    Name rewrite_tag
-                    Match kube.*
-                    Rule $kubernetes['namespace_name'] ^(wamp-sit|wamp-uat)$ s3.$kubernetes['namespace_name'].$kubernetes['labels']['app'].$kubernetes['container_name'] false
-                    Emitter_Name re_emitted
-              
+                    Name    grep
+                    Match   kube.*
+                    # Accept pods with either labeling convention
+                    # This regex means: match if 'app.kubernetes.io/name' label exists
+                    Regex   kubernetes_labels_app.kubernetes.io/name .+
+
+                # Fifth filter: Add custom fields for S3 path construction
+                [FILTER]
+                    Name    modify
+                    Match   kube.*
+                    # Add timestamp components for partitioning
+                    Add     year ${%Y}
+                    Add     month ${%m}
+                    Add     day ${%d}
+                    Add     hour ${%H}
+                    # Extract app name from the recommended Kubernetes label first
+                    Add     app_name ${kubernetes_labels_app_kubernetes_io/name}
+                    
               # Output plugins - where logs go
               outputs: |
                 [OUTPUT]
@@ -124,8 +173,9 @@ spec:
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     total_file_size 50M
-                    s3_key_format /kubernetes-logs/$TAG[1]/$TAG[2]/year=%Y/month=%m/day=%d/hour=%H/$TAG[3]/$TAG[3]-%Y%m%d-%H%M%S.log
-                    s3_key_format_tag_delimiters .
+                    s3_key_format /kubernetes-logs/${kubernetes_namespace_name}/${app_name}/year=%Y/month=%m/day=%d/hour=%H/${kubernetes_container_name}/${kubernetes_container_name}-%Y%m%d-%H%M%S.log
+                    # File size and time limits for S3 uploads
+                    total_file_size 50M
                     upload_timeout 10m
                     preserve_data_ordering On
                     storage_class STANDARD_IA
