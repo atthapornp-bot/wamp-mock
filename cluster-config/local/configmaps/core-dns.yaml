@@ -52,3 +52,9 @@ data:
           10.200.11.44 gateway-uat.muangthai.co.th
         }
     }
+    github.com:53 {
+        errors
+        hosts {
+          120.205.243.166 github.com
+        }
+    }
