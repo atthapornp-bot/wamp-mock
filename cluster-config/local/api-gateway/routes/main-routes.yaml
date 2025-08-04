@@ -1,0 +1,66 @@
+# Health Check Routes for Load Balancer Monitoring
+# These routes provide health endpoints that AWS ALB/NLB can use for health checks
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: main-routes
+  namespace: ingress-nginx
+spec:
+  http:
+  # Basic health check - returns 200 OK
+  - name: health-check
+    match:
+      paths:
+      - "/healthz"
+    backends:
+    - serviceName: ingress-nginx-controller
+      servicePort: 80
+    plugins:
+    - name: echo
+      enable: true
+      config:
+        body: "OK"
+        status: 200
+  
+  # Catch-all route for unmatched requests - returns 404
+  - name: catch-all
+    match:
+      paths:
+      - "/*"
+    priority: -1
+    backends:
+    - serviceName: ingress-nginx-controller
+      servicePort: 80
+    plugins:
+    # Generate request ID if not already present
+    - name: request-id
+      enable: true
+      config:
+        include_in_response: true
+        header_name: "X-Request-ID"
+    # Generate dynamic 404 response with actual request ID and timestamp
+    - name: serverless-pre-function
+      enable: true
+      config:
+        phase: access
+        functions:
+        - |
+          return function(conf, ctx)
+            local json = require("cjson")
+            local request_id = ngx.var.request_id or ngx.var.uuid4()
+            local timestamp = ngx.var.time_iso8601
+            
+            local response_body = json.encode({
+              error = "No matching route found",
+              message = "The requested endpoint is not available",
+              request_id = request_id,
+              timestamp = timestamp
+            })
+            
+            ngx.status = 404
+            ngx.header["Content-Type"] = "application/json"
+            ngx.header["X-Request-ID"] = request_id
+            ngx.say(response_body)
+            ngx.exit(404)
+          end
+  
