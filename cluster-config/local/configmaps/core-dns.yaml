@@ -62,5 +62,6 @@ data:
         errors
         hosts {
           192.168.77.56 k-proposal-uat.muangthai.co.th
+          10.200.1.17 k-proposal-uat.muangthai.co.th
         }
     }
