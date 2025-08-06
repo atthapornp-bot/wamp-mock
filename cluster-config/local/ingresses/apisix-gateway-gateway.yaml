@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: apisix-gateway-gateway
+  namespace: apisix-system
+  labels:
+    app.kubernetes.io/name: apisix-gateway-gateway
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 128m
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 16m
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "wamp-gw-nonprod.muangthai.co.th"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: local-apisix-gateway-gateway # APISIX gateway service
+                port:
+                  number: 80
