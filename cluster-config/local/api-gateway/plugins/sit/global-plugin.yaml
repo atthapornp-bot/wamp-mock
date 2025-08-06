@@ -24,8 +24,8 @@ spec:
             error:
               shouldOverride: true
               code: 400
-              errorMessageTH: "ข้อมูลที่ส่งมาไม่ถูกต้อง"
-              errorMessageEN: "Invalid request data"
+              errorMessageTH: "ข้อมูล หรือ headers ที่ส่งมาไม่ถูกต้อง"
+              errorMessageEN: "Invalid request data or headers"
         header_schema:
           type: object
           properties:
