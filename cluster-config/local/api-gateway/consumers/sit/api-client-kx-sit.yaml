@@ -1,0 +1,14 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  name: api-client-kx-sit
+  namespace: apisix-system
+spec:
+  # Configure API key authentication for this consumer
+  authParameter:
+    keyAuth:
+      value:
+        # The API key that this consumer will use
+        # In production, you'd want to generate a secure random key
+        key: "mooWoot4xaeKohmoh7Eipoochaeveit4"
+  

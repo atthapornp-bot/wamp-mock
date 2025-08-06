@@ -1,0 +1,34 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: external-api
+  namespace: wamp-sit
+spec:
+  # Define the HTTP rules for this route
+  http:
+    - name: external-api-sit
+      # Match requests to this path pattern
+      match:
+        hosts:
+          - "wamp-gw-nonprod.muangthai.co.th"
+        paths:
+          - /sit/api/v1/external
+          - /sit/api/v1/external/*
+        methods:
+          - POST
+
+      # Where to send authenticated requests
+      backends:
+        - serviceName: wamp-external-api
+          servicePort: 80
+          weight: 100
+
+      # Reference to comprehensive error handling plugin configuration
+      plugin_config_name: global-plugin
+
+      # Additional plugins that apply to this route
+      plugins:
+        - name: proxy-rewrite
+          enable: true
+          config:
+            regex_uri: ["^/sit/api/v1/external(?:/(.*))?/?$", "/$1"]
