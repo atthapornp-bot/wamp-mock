@@ -52,16 +52,15 @@ data:
           10.200.11.44 gateway-uat.muangthai.co.th
         }
     }
-    github.com:53 {
+    pdfwrk-uat.muangthai.co.th:53 {
         errors
         hosts {
-          120.205.243.166 github.com
+          10.200.1.22 pdfwrk-uat.muangthai.co.th
         }
     }
     k-proposal-uat.muangthai.co.th:53 {
         errors
         hosts {
-          192.168.77.56 k-proposal-uat.muangthai.co.th
           10.200.1.17 k-proposal-uat.muangthai.co.th
         }
     }
