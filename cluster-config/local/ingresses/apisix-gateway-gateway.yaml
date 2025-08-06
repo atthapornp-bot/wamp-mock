@@ -17,8 +17,8 @@ spec:
     - host: "wamp-gw-nonprod.muangthai.co.th"
       http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /?(.*)
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: local-apisix-gateway-gateway # APISIX gateway service
