@@ -150,7 +150,7 @@ spec:
                     Name loki
                     Match kube.*
                     # Loki endpoint configuration
-                    uri http://loki.loki.svc.cluster.local:3100/loki/api/v1/push
+                    uri http://loki.loki:3100/loki/api/v1/push
                     # Labels for log streams - Loki uses labels for indexing
                     labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
                     # Remove metadata to reduce log size
