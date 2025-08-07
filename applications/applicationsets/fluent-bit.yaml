@@ -139,8 +139,6 @@ spec:
                     Exclude kubernetes_container_name ^(pause|kube-proxy|coredns|flannel|calico.*|weave.*|cilium.*|kindnet.*|local-path-provisioner)$
                 
                 # Fourth filter: Only include containers that have an app-related label
-                # This ensures we only get application containers, not random system containers
-                # We check for either the simple 'app' label or the recommended 'app.kubernetes.io/name' label
                 [FILTER]
                     Name    grep
                     Match   kube.*
