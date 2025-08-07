@@ -57,9 +57,6 @@ spec:
             # Service account with necessary permissions
             serviceAccount:
               create: true
-              annotations:
-                # This annotation links to IAM role for S3 access (dev account)
-                eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
             
             # Core FluentBit configuration
             config:
@@ -153,32 +150,40 @@ spec:
                     # This regex means: match if 'app.kubernetes.io/name' label exists
                     Regex   kubernetes_labels_app.kubernetes.io/name .+
 
-                # Fifth filter: Add custom fields for S3 path construction
+                # Fifth filter: Add custom fields for log processing
                 [FILTER]
                     Name    modify
                     Match   kube.*
-                    # Add timestamp components for partitioning
-                    Add     year ${%Y}
-                    Add     month ${%m}
-                    Add     day ${%d}
-                    Add     hour ${%H}
                     # Extract app name from the recommended Kubernetes label first
                     Add     app_name ${kubernetes_labels_app_kubernetes_io/name}
                     
               # Output plugins - where logs go
               outputs: |
                 [OUTPUT]
-                    Name s3
-                    Match s3.*
-                    bucket wamp-nonprod-s3
-                    region ${AWS_REGION}
-                    total_file_size 50M
-                    s3_key_format /kubernetes-logs/${kubernetes_namespace_name}/${app_name}/year=%Y/month=%m/day=%d/hour=%H/${kubernetes_container_name}/${kubernetes_container_name}-%Y%m%d-%H%M%S.log
-                    # File size and time limits for S3 uploads
-                    total_file_size 50M
-                    upload_timeout 10m
-                    preserve_data_ordering On
-                    storage_class STANDARD_IA
+                    Name loki
+                    Match kube.*
+                    # Loki endpoint - adjust this to your Loki service endpoint
+                    host loki.loki.svc.cluster.local
+                    port 3100
+                    # HTTP endpoint path for Loki push API
+                    uri /loki/api/v1/push
+                    # Labels for log streams - Loki uses labels for indexing
+                    labels job=fluent-bit, cluster=${CLUSTER_NAME}, namespace=$kubernetes_namespace_name, app=$app_name, container=$kubernetes_container_name, pod=$kubernetes_pod_name, node=$kubernetes_host
+                    # Remove metadata to reduce log size (optional)
+                    remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
+                    # Auto kubernetes labels - adds all k8s labels as Loki labels
+                    auto_kubernetes_labels on
+                    # Buffer and retry settings
+                    retry_limit 5
+                    retry_delay 1
+                    # Batch settings for performance
+                    batch_size 1000000
+                    batch_timeout 5s
+                    # HTTP settings
+                    http_user 
+                    http_passwd 
+                    # Tenant ID (for multi-tenant Loki setups)
+                    tenant_id "fluent-bit"
               
               # Custom parsers for different log formats
               customParsers: |
@@ -200,18 +205,6 @@ spec:
             env:
               - name: CLUSTER_NAME
                 value: "wamp-nonprod"
-              - name: AWS_REGION
-                value: "ap-southeast-1"
-              - name: AWS_ACCESS_KEY_ID
-                valueFrom:
-                  secretKeyRef:
-                    name: fluent-bit
-                    key: AWS_ACCESS_KEY_ID
-              - name: AWS_SECRET_ACCESS_KEY
-                valueFrom:
-                  secretKeyRef:
-                    name: fluent-bit
-                    key: AWS_SECRET_ACCESS_KEY
 
             # Tolerations to allow FluentBit to run on all nodes
             # This ensures comprehensive log collection across the entire cluster
