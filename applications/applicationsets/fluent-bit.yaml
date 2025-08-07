@@ -78,6 +78,8 @@ spec:
                     storage.sync  normal
                     storage.checksum off
                     storage.backlog.mem_limit 50M
+                    # Specify parsers file
+                    Parsers_File parsers.conf
               
               # Input plugins - where logs come from
               inputs: |
@@ -88,6 +90,8 @@ spec:
                     Path              /var/log/containers/*.log
                     # Exclude Fluent Bit's own logs to prevent circular logging
                     Exclude_Path      /var/log/containers/*fluent-bit*.log
+                    # Use docker parser for container logs
+                    Parser            docker
                     # Tag pattern - this creates structured tags for filtering
                     Tag               kube.*
                     # Memory buffer limit per file
@@ -164,6 +168,13 @@ spec:
               
               # Custom parsers for different log formats
               customParsers: |
+                [PARSER]
+                    Name docker
+                    Format json
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L
+                    Time_Keep On
+                    
                 [PARSER]
                     Name docker_no_time
                     Format json
