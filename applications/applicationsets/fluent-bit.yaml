@@ -88,8 +88,8 @@ spec:
                     Path              /var/log/containers/*.log
                     # Exclude Fluent Bit's own logs to prevent circular logging
                     Exclude_Path      /var/log/containers/*fluent-bit*.log
-                    # Use CRI parser since most K8s clusters use containerd/CRI-O
-                    Parser            cri
+                    # Use docker parser for container logs
+                    Parser            docker
                     # Tag pattern - this creates structured tags for filtering
                     Tag               kube.*
                     # Memory buffer limit per file
@@ -98,8 +98,6 @@ spec:
                     Skip_Long_Lines   On
                     # Refresh interval for discovering new files
                     Refresh_Interval  10
-                    # Enable multiline support for stack traces
-                    Multiline.parser  cri
               
               # Filters - transform and enrich logs
               filters: |
@@ -149,13 +147,6 @@ spec:
                     # Accept pods with either labeling convention
                     # This regex means: match if 'app.kubernetes.io/name' label exists
                     Regex   kubernetes_labels_app.kubernetes.io/name .+
-
-                # Fifth filter: Add custom fields for log processing
-                [FILTER]
-                    Name    modify
-                    Match   kube.*
-                    # Extract app name from the recommended Kubernetes label first
-                    Add     app_name ${kubernetes_labels_app_kubernetes_io/name}
                     
               # Output plugins - where logs go
               outputs: |
@@ -168,7 +159,7 @@ spec:
                     # HTTP endpoint path for Loki push API
                     uri /loki/api/v1/push
                     # Labels for log streams - Loki uses labels for indexing
-                    labels job=fluent-bit, cluster=${CLUSTER_NAME}, namespace=$kubernetes_namespace_name, app=$app_name, container=$kubernetes_container_name, pod=$kubernetes_pod_name, node=$kubernetes_host
+                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
                     # Remove metadata to reduce log size (optional)
                     remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
                     # Auto kubernetes labels - adds all k8s labels as Loki labels
