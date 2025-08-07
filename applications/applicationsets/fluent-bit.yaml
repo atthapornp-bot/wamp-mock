@@ -179,9 +179,6 @@ spec:
                     # Batch settings for performance
                     batch_size 1000000
                     batch_timeout 5s
-                    # HTTP settings
-                    http_user 
-                    http_passwd 
                     # Tenant ID (for multi-tenant Loki setups)
                     tenant_id "wamp"
               
