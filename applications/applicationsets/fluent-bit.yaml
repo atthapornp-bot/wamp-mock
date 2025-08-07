@@ -183,7 +183,7 @@ spec:
                     http_user 
                     http_passwd 
                     # Tenant ID (for multi-tenant Loki setups)
-                    tenant_id "fluent-bit"
+                    tenant_id "wamp"
               
               # Custom parsers for different log formats
               customParsers: |
