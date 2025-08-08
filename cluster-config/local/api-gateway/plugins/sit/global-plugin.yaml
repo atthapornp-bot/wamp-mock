@@ -48,7 +48,7 @@ spec:
               code: 429
               errorMessageTH: "การจำกัดอัตราการเรียกใช้งานเกินขีดจำกัด"
               errorMessageEN: "Rate limit exceeded"
-        count: 500
+        count: 10000
         time_window: 3600
         rejected_code: 429
         rejected_msg: "Route-specific rate limit exceeded"
