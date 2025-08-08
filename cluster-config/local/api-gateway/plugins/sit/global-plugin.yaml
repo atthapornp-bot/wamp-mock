@@ -137,18 +137,6 @@ spec:
                   decoded_body.error.timestamp = timestamp
                   response_body = cjson.encode(decoded_body)
                   body_replace = true
-                elseif not success then
-                  -- JSON decoding failed, create standardized error format
-                  core.log.error("Failed to decode JSON body: ", err)
-                  response_body = cjson.encode({
-                    error = {
-                      code = ngx.status,
-                      message = body,
-                      requestId = request_id,
-                      timestamp = timestamp
-                    }
-                  })
-                  body_replace = true
                 else
                   -- Valid JSON but no shouldOverride, keep original body
                   response_body = body
