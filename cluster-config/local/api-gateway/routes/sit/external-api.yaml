@@ -31,4 +31,4 @@ spec:
         - name: proxy-rewrite
           enable: true
           config:
-            regex_uri: ["^/sit/api/v1/external(?:/(.*))?/?$", "/$1"]
+            regex_uri: ["^/sit/api/v1/external(?:/(.*))?/?$", "/v1/$1"]
