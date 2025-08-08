@@ -140,7 +140,14 @@ spec:
                 elseif not success then
                   -- JSON decoding failed, create standardized error format
                   core.log.error("Failed to decode JSON body: ", err)
-                  response_body = 'test'
+                  response_body = {
+                    error = {
+                      code = ngx.status,
+                      message = body,
+                      requestId = request_id,
+                      timestamp = timestamp
+                    }
+                  }
                   body_replace = true
                 else
                   -- Valid JSON but no shouldOverride, keep original body
