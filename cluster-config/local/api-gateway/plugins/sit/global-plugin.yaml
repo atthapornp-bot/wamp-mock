@@ -151,7 +151,7 @@ spec:
                   body_replace = true
                 else
                   -- Valid JSON but no shouldOverride, keep original body
-                  response_body = body
+                  response_body = 'test'
                   body_replace = false
                 end
 
