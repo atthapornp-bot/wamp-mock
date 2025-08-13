@@ -68,6 +68,7 @@ spec:
         whitelist: # Naming does not allow hyphen (-) in the name, it needs to be replaced with underscore (_)
           - "apisix_system_api_client_mtl_sit"
           - "apisix_system_api_client_kx_sit"
+          - "apisix_system_api_client_dataservice_sit"
 
     # Key authentication (default priority: 1000)
     - name: key-auth
