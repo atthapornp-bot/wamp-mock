@@ -12,8 +12,9 @@ spec:
         hosts:
           - "wamp-gw-nonprod.muangthai.co.th"
         paths:
-          - /sit/api/v1/external
-          - /sit/api/v1/external/*
+          - /sit/api/v1/external/confirm-quotation
+          - /sit/api/v1/external/get-quotation
+          - /sit/api/v1/external/reference-code
         methods:
           - POST
           
