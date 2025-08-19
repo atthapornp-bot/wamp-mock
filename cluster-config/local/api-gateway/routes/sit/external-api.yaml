@@ -16,7 +16,7 @@ spec:
           - /sit/api/v1/external/*
         methods:
           - POST
-          - GET
+          
 
       # Where to send authenticated requests
       backends:
