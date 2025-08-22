@@ -11,8 +11,6 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: 128m
     nginx.ingress.kubernetes.io/client-body-buffer-size: 16m
     nginx.ingress.kubernetes.io/rewrite-target: /$1
-    nginx.ingress.kubernetes.io/proxy-set-headers: |
-      host-header-configmap
 spec:
   ingressClassName: nginx
   rules:
