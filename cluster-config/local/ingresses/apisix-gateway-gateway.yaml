@@ -13,8 +13,6 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$1
     nginx.ingress.kubernetes.io/proxy-set-headers: |
       host-header-configmap
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_set_header Host $server_name;
 spec:
   ingressClassName: nginx
   rules:
