@@ -97,8 +97,9 @@ spec:
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
                     # Refresh interval for discovering new files
-                    Refresh_Interval  10
-              
+                    Refresh_Interval  1
+                    Rotate_Wait       5
+
               # Filters - transform and enrich logs
               filters: |
                 # First filter: Extract Kubernetes metadata from file paths and container info
@@ -114,13 +115,13 @@ spec:
                     Match wamp*
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
-                    endpoint          https://wamp.s3.ap-southeast-1.amazonaws.com
                     s3_key_format     /kubernetes-logs/${WAMP_NAMESPACE}/$TAG[0]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]/$TAG[1]-$TAG[2]-%Y%m%d-%H%M%S.log
                     s3_key_format_tag_delimiters .
                     content_type      text/plain
                     total_file_size    10M
                     upload_timeout     1m
                     use_put_object     On
+                    storage_class STANDARD_IA
               
               # Custom parsers for different log formats
               customParsers: |
