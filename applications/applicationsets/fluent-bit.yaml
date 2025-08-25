@@ -81,7 +81,8 @@ spec:
                     storage.sync  normal
                     storage.checksum off
                     storage.backlog.mem_limit 50M
-              
+                    Parsers_File /fluent-bit/etc/parser.conf
+
               # Input plugins - where logs come from
               inputs: |
                 [INPUT]
@@ -147,6 +148,8 @@ spec:
                 value: "wamp-nonprod"
               - name: AWS_REGION
                 value: "ap-southeast-1"
+              - name: WAMP_NAMESPACE
+                value: wamp-sit
               - name: AWS_ACCESS_KEY_ID
                 valueFrom:
                   secretKeyRef:
