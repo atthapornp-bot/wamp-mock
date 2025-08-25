@@ -57,6 +57,9 @@ spec:
             # Service account with necessary permissions
             serviceAccount:
               create: true
+              annotations:
+                # This annotation links to IAM role for S3 access (dev account)
+                eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
             
             # Core FluentBit configuration
             config:
@@ -78,8 +81,6 @@ spec:
                     storage.sync  normal
                     storage.checksum off
                     storage.backlog.mem_limit 50M
-                    # Specify parsers file
-                    Parsers_File parsers.conf
               
               # Input plugins - where logs come from
               inputs: |
@@ -88,16 +89,12 @@ spec:
                     Name              tail
                     # Path where Kubernetes stores container logs
                     Path              /var/log/containers/*.log
-                    # Exclude Fluent Bit's own logs to prevent circular logging
-                    Exclude_Path      /var/log/containers/*fluent-bit*.log
-                    # Use docker parser for container logs
-                    Parser            docker
+                    # Use CRI parser since most K8s clusters use containerd/CRI-O
+                    Parser            json_parser
                     # Tag pattern - this creates structured tags for filtering
-                    Tag               kube.*
+                    Tag               wamp-app
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
-                    # Skip long lines instead of failing
-                    Skip_Long_Lines   On
                     # Refresh interval for discovering new files
                     Refresh_Interval  10
               
@@ -105,76 +102,27 @@ spec:
               filters: |
                 # First filter: Extract Kubernetes metadata from file paths and container info
                 [FILTER]
-                    Name                kubernetes
-                    Match               kube.*
-                    # Location of Kubernetes API
-                    Kube_URL            https://kubernetes.default.svc:443
-                    Kube_CA_File        /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                    Kube_Token_File     /var/run/secrets/kubernetes.io/serviceaccount/token
-                    # Tag prefix for the kubernetes filter
-                    Kube_Tag_Prefix     kube.var.log.containers.
-                    # Merge log record with Kubernetes metadata
-                    Merge_Log           On
-                    # Keep original log field
-                    Keep_Log            Off
-                    # Add Kubernetes annotations as metadata
-                    K8S-Logging.Parser  On
-                    K8S-Logging.Exclude On
-                    # Add readable labels
-                    Labels              On
-                    Annotations         On
-                    # Buffer size for HTTP requests to K8s API
-                    Buffer_Size         32k
-
-                # Second filter: Exclude system containers and namespaces
-                [FILTER]
-                    Name    grep
-                    Match   kube.*
-                    # Exclude system namespaces - these contain infrastructure pods
-                    Exclude kubernetes_namespace_name ^(kube-system|kube-public|kube-node-lease|logging|istio-system|cert-manager|ingress-nginx)$
-
-                # Third filter: Exclude specific system containers by name patterns
-                [FILTER]
-                    Name    grep
-                    Match   kube.*
-                    # Exclude common system containers (pause, proxy, dns, etc.)
-                    Exclude kubernetes_container_name ^(pause|kube-proxy|coredns|flannel|calico.*|weave.*|cilium.*|kindnet.*|local-path-provisioner)$
-                
-                # Fourth filter: Only include containers that have an app-related label
-                [FILTER]
-                    Name    grep
-                    Match   kube.*
-                    # Accept pods with either labeling convention
-                    # This regex means: match if 'app.kubernetes.io/name' label exists
-                    Regex   kubernetes_labels_app.kubernetes.io/name .+
+                    Name rewrite_tag
+                    Match wamp-app
+                    rule $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
                     
               # Output plugins - where logs go
               outputs: |
                 [OUTPUT]
-                    Name loki
-                    Match kube.*
-                    # Loki endpoint configuration
-                    uri http://loki.loki:3100/loki/api/v1/push
-                    # Labels for log streams - Loki uses labels for indexing
-                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
-                    # Remove metadata to reduce log size
-                    remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
-                    # Auto kubernetes labels - adds all k8s labels as Loki labels
-                    auto_kubernetes_labels on
-                    # Tenant ID for multi-tenant Loki setups
-                    tenant_id wamp
-                    # Line format - how to format the log line
-                    line_format json
+                    Name s3
+                    Match wamp*
+                    bucket wamp-nonprod-s3
+                    region ${AWS_REGION}
+                    endpoint          https://wamp.s3.ap-southeast-1.amazonaws.com
+                    s3_key_format     /kubernetes-logs/${WAMP_NAMESPACE}/$TAG[0]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]/$TAG[1]-$TAG[2]-%Y%m%d-%H%M%S.log
+                    s3_key_format_tag_delimiters .
+                    content_type      text/plain
+                    total_file_size    10M
+                    upload_timeout     1m
+                    use_put_object     On
               
               # Custom parsers for different log formats
               customParsers: |
-                [PARSER]
-                    Name docker
-                    Format json
-                    Time_Key time
-                    Time_Format %Y-%m-%dT%H:%M:%S.%L
-                    Time_Keep On
-                    
                 [PARSER]
                     Name docker_no_time
                     Format json
@@ -189,10 +137,26 @@ spec:
                     Time_Key time
                     Time_Format %Y-%m-%dT%H:%M:%S.%L%z
 
+                [PARSER]
+                    Name json_parser
+                    Format json
+
             # Environment variables for configuration
             env:
               - name: CLUSTER_NAME
                 value: "wamp-nonprod"
+              - name: AWS_REGION
+                value: "ap-southeast-1"
+              - name: AWS_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_ACCESS_KEY_ID
+              - name: AWS_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_SECRET_ACCESS_KEY
 
             # Tolerations to allow FluentBit to run on all nodes
             # This ensures comprehensive log collection across the entire cluster
