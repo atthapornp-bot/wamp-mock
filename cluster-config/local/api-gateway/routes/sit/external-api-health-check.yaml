@@ -11,6 +11,7 @@ spec:
       match:
         hosts:
           - "wamp-gw-nonprod.muangthai.co.th"
+          - "oapi-sit.dev.muangthai.co.th"
         paths:
           - /sit/api/v1/external/health-check/livez
           - /sit/api/v1/external/health-check/readyz
