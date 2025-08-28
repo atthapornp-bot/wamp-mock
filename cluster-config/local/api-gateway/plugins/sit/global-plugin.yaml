@@ -104,55 +104,55 @@ spec:
 
     # Body filter - This runs when the response body is being sent
     # We'll completely replace the body with our formatted error
-    - name: serverless-post-function
-      enable: true
-      config:
-        phase: body_filter
-        functions:
-          - |
-            return function(conf, ctx)
-              if ngx.status >= 400 then
-                local cjson = require('cjson')
-                local core = require('apisix.core')
-                local body = core.response.hold_body_chunk(ctx)
+    # - name: serverless-post-function
+    #   enable: true
+    #   config:
+    #     phase: body_filter
+    #     functions:
+    #       - |
+    #         return function(conf, ctx)
+    #           if ngx.status >= 400 then
+    #             local cjson = require('cjson')
+    #             local core = require('apisix.core')
+    #             local body = core.response.hold_body_chunk(ctx)
                 
-                if not body then
-                  return
-                end
+    #             if not body then
+    #               return
+    #             end
 
-                local request_id = core.request.header(ctx, "X-Request-ID") or ngx.var.request_id
-                local timestamp = os.date("%Y-%m-%dT%H:%M:%S+07:00", os.time())
+    #             local request_id = core.request.header(ctx, "X-Request-ID") or ngx.var.request_id
+    #             local timestamp = os.date("%Y-%m-%dT%H:%M:%S+07:00", os.time())
                 
-                -- Try to decode JSON body
-                local decoded_body
-                local success, err = pcall(function()
-                  decoded_body = cjson.decode(body)
-                end)
+    #             -- Try to decode JSON body
+    #             local decoded_body
+    #             local success, err = pcall(function()
+    #               decoded_body = cjson.decode(body)
+    #             end)
 
-                local response_body
-                local body_replace = false
+    #             local response_body
+    #             local body_replace = false
 
-                if success and decoded_body and decoded_body.error and decoded_body.error.shouldOverride then
-                  -- Custom error format with shouldOverride
-                  decoded_body.error.shouldOverride = nil
-                  decoded_body.error.requestId = request_id
-                  decoded_body.error.timestamp = timestamp
-                  response_body = cjson.encode(decoded_body)
-                  body_replace = true
-                else
-                  -- Valid JSON but no shouldOverride, keep original body
-                  response_body = body
-                  body_replace = false
-                end
+    #             if success and decoded_body and decoded_body.error and decoded_body.error.shouldOverride then
+    #               -- Custom error format with shouldOverride
+    #               decoded_body.error.shouldOverride = nil
+    #               decoded_body.error.requestId = request_id
+    #               decoded_body.error.timestamp = timestamp
+    #               response_body = cjson.encode(decoded_body)
+    #               body_replace = true
+    #             else
+    #               -- Valid JSON but no shouldOverride, keep original body
+    #               response_body = body
+    #               body_replace = false
+    #             end
 
-                -- Only executed on the last chunk (hold_body_chunk returned content).
-                -- Always emit the final body and mark EOF to avoid truncation.
-                if body_replace then
-                  ngx.arg[1] = response_body
-                  ngx.arg[2] = true
-                else
-                  ngx.arg[1] = body
-                  ngx.arg[2] = true
-                end
-              end
-            end
+    #             -- Only executed on the last chunk (hold_body_chunk returned content).
+    #             -- Always emit the final body and mark EOF to avoid truncation.
+    #             if body_replace then
+    #               ngx.arg[1] = response_body
+    #               ngx.arg[2] = true
+    #             else
+    #               ngx.arg[1] = body
+    #               ngx.arg[2] = true
+    #             end
+    #           end
+    #         end
