@@ -5,7 +5,7 @@ metadata:
   namespace: wamp-sit
   labels:
     app: apisix
-spec: 
+spec:
   plugins:
     # Generate request ID first (default priority: 12015)
     - name: request-id
@@ -139,25 +139,20 @@ spec:
                   decoded_body.error.timestamp = timestamp
                   response_body = cjson.encode(decoded_body)
                   body_replace = true
-                elseif not success then
-                  -- JSON decoding failed, create standardized error format
-                  core.log.error("Failed to decode JSON body: ", err)
-                  response_body = cjson.encode({
-                    error = {
-                      code = ngx.status,
-                      message = body,
-                      requestId = request_id,
-                      timestamp = timestamp
-                    }
-                  })
-                  body_replace = true
                 else
                   -- Valid JSON but no shouldOverride, keep original body
                   response_body = body
                   body_replace = false
                 end
 
-                ngx.arg[1] = response_body
-                ngx.arg[2] = body_replace
+                -- Only executed on the last chunk (hold_body_chunk returned content).
+                -- Always emit the final body and mark EOF to avoid truncation.
+                if body_replace then
+                  ngx.arg[1] = response_body
+                  ngx.arg[2] = true
+                else
+                  ngx.arg[1] = body
+                  ngx.arg[2] = true
+                end
               end
             end
