@@ -22,74 +22,74 @@ spec:
         body: "OK"
         status: 200
   
-  # Catch-all route for unmatched requests - returns 404
-  - name: catch-all
-    match:
-      paths:
-      - "/*"
-    priority: -1
-    backends:
-    - serviceName: ingress-nginx-controller
-      servicePort: 80
-    plugins:
-    # Generate request ID if not already present
-    - name: request-id
-      enable: true
-      config:
-        include_in_response: true
-        header_name: "X-Request-ID"
-    # Generate dynamic 404 response with actual request ID and timestamp
-    - name: serverless-pre-function
-      enable: true
-      config:
-        phase: access
-        functions:
-        - |
-          return function(conf, ctx)
-            -- Prefer cjson.safe to avoid unexpected errors; fallback to cjson
-            local ok_cjson_safe, json = pcall(require, "cjson.safe")
-            if not ok_cjson_safe or not json then
-              json = require("cjson")
-            end
+  # # Catch-all route for unmatched requests - returns 404
+  # - name: catch-all
+  #   match:
+  #     paths:
+  #     - "/*"
+  #   priority: -1
+  #   backends:
+  #   - serviceName: ingress-nginx-controller
+  #     servicePort: 80
+  #   plugins:
+  #   # Generate request ID if not already present
+  #   - name: request-id
+  #     enable: true
+  #     config:
+  #       include_in_response: true
+  #       header_name: "X-Request-ID"
+  #   # Generate dynamic 404 response with actual request ID and timestamp
+  #   - name: serverless-pre-function
+  #     enable: true
+  #     config:
+  #       phase: access
+  #       functions:
+  #       - |
+  #         return function(conf, ctx)
+  #           -- Prefer cjson.safe to avoid unexpected errors; fallback to cjson
+  #           local ok_cjson_safe, json = pcall(require, "cjson.safe")
+  #           if not ok_cjson_safe or not json then
+  #             json = require("cjson")
+  #           end
 
-            -- Try to reuse request-id from header or NGINX var (set by APISIX request-id plugin)
-            local req_headers = ngx.req.get_headers() or {}
-            local request_id = req_headers["X-Request-ID"] or ngx.var.request_id
+  #           -- Try to reuse request-id from header or NGINX var (set by APISIX request-id plugin)
+  #           local req_headers = ngx.req.get_headers() or {}
+  #           local request_id = req_headers["X-Request-ID"] or ngx.var.request_id
 
-            -- Fallback: generate a UUID v4 if available, otherwise a pseudo ID
-            if not request_id or request_id == "" then
-              local ok_uuid, uuid = pcall(function()
-                local u = require("resty.jit-uuid")
-                if u.seed then u.seed() end
-                return u.generate_v4()
-              end)
-              if ok_uuid and uuid then
-                request_id = uuid
-              else
-                -- Pseudo ID: timestamp + random suffix
-                math.randomseed(ngx.now() * 1000 + ngx.worker.pid())
-                request_id = string.format("%s-%06d", tostring(ngx.now()):gsub("%.", ""), math.random(0, 999999))
-              end
-            end
+  #           -- Fallback: generate a UUID v4 if available, otherwise a pseudo ID
+  #           if not request_id or request_id == "" then
+  #             local ok_uuid, uuid = pcall(function()
+  #               local u = require("resty.jit-uuid")
+  #               if u.seed then u.seed() end
+  #               return u.generate_v4()
+  #             end)
+  #             if ok_uuid and uuid then
+  #               request_id = uuid
+  #             else
+  #               -- Pseudo ID: timestamp + random suffix
+  #               math.randomseed(ngx.now() * 1000 + ngx.worker.pid())
+  #               request_id = string.format("%s-%06d", tostring(ngx.now()):gsub("%.", ""), math.random(0, 999999))
+  #             end
+  #           end
 
-            local timestamp = ngx.var.time_iso8601 or os.date("!%Y-%m-%dT%H:%M:%SZ")
+  #           local timestamp = ngx.var.time_iso8601 or os.date("!%Y-%m-%dT%H:%M:%SZ")
 
-            local body_tbl = {
-              error = "No matching route found",
-              message = "The requested endpoint is not available",
-              request_id = request_id,
-              timestamp = timestamp
-            }
-            local response_body = json.encode(body_tbl) or '{"error":"No matching route found"}'
+  #           local body_tbl = {
+  #             error = "No matching route found",
+  #             message = "The requested endpoint is not available",
+  #             request_id = request_id,
+  #             timestamp = timestamp
+  #           }
+  #           local response_body = json.encode(body_tbl) or '{"error":"No matching route found"}'
 
-            -- Ensure downstreams don't truncate: set Content-Length and write body explicitly
-            ngx.status = 404
-            ngx.header["Content-Type"] = "application/json; charset=utf-8"
-            ngx.header["Cache-Control"] = "no-cache"
-            ngx.header["X-Request-ID"] = request_id
-            ngx.header["Content-Length"] = #response_body
+  #           -- Ensure downstreams don't truncate: set Content-Length and write body explicitly
+  #           ngx.status = 404
+  #           ngx.header["Content-Type"] = "application/json; charset=utf-8"
+  #           ngx.header["Cache-Control"] = "no-cache"
+  #           ngx.header["X-Request-ID"] = request_id
+  #           ngx.header["Content-Length"] = #response_body
 
-            ngx.print(response_body)
-            return ngx.exit(404)
-          end
+  #           ngx.print(response_body)
+  #           return ngx.exit(404)
+  #         end
   
