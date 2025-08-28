@@ -19,6 +19,13 @@ spec:
     - name: request-validation
       enable: true
       config:
+        _meta:
+          error_response:
+            error:
+              shouldOverride: true
+              code: 400
+              errorMessageTH: "ข้อมูล หรือ headers ที่ส่งมาไม่ถูกต้อง"
+              errorMessageEN: "Invalid request data or headers"
         header_schema:
           type: object
           properties:
@@ -34,6 +41,13 @@ spec:
     - name: limit-count
       enable: true
       config:
+        _meta:
+          error_response:
+            error:
+              shouldOverride: true
+              code: 429
+              errorMessageTH: "การจำกัดอัตราการเรียกใช้งานเกินขีดจำกัด"
+              errorMessageEN: "Rate limit exceeded"
         count: 10000
         time_window: 3600
         rejected_code: 429
@@ -44,16 +58,28 @@ spec:
     - name: consumer-restriction
       enable: true
       config:
+        _meta:
+          error_response:
+            error:
+              shouldOverride: true
+              code: 401
+              errorMessageTH: "API Key ไม่ถูกต้อง"
+              errorMessageEN: "Invalid API Key"
         whitelist: # Naming does not allow hyphen (-) in the name, it needs to be replaced with underscore (_)
-          - "apisix_system_api_client_mtl_sit"
-          - "apisix_system_api_client_kx_sit"
-          - "apisix_system_api_client_dataservice_sit"
-          - "apisix_system_api_client_oapi_sit"
+          - "apisix_system_api_client_mtl_uat"
+          - "apisix_system_api_client_kx_uat"
 
     # Key authentication (default priority: 1000)
     - name: key-auth
       enable: true
       config:
+        _meta:
+          error_response:
+            error:
+              shouldOverride: true
+              code: 401
+              errorMessageTH: "API Key ไม่ถูกต้อง"
+              errorMessageEN: "Invalid API Key"
         # The header where the API key should be provided
         # Clients will send: X-API-Key: <your-api-key>
         header: X-API-KEY
@@ -92,94 +118,44 @@ spec:
                   return
                 end
 
-                -- Map status codes to error names
-                local status_map = {
-                  [400] = "Bad_Request",
-                  [401] = "Unauthorized",
-                  [403] = "Forbidden",
-                  [404] = "Not_Found",
-                  [405] = "Method_Not_Allowed",
-                  [408] = "Request_Timeout",
-                  [409] = "Conflict",
-                  [410] = "Gone",
-                  [411] = "Length_Required",
-                  [412] = "Precondition_Failed",
-                  [413] = "Payload_Too_Large",
-                  [414] = "URI_Too_Long",
-                  [415] = "Unsupported_Media_Type",
-                  [422] = "Unprocessable_Entity",
-                  [429] = "Too_Many_Requests",
-                  [500] = "Internal_Server_Error",
-                  [501] = "Not_Implemented",
-                  [502] = "Bad_Gateway",
-                  [503] = "Service_Unavailable",
-                  [504] = "Gateway_Timeout",
-                  [505] = "HTTP_Version_Not_Supported"
-                }
+                local request_id = core.request.header(ctx, "X-Request-ID") or ngx.var.request_id
+                local timestamp = os.date("%Y-%m-%dT%H:%M:%S+07:00", os.time())
                 
-                local error_name = status_map[ngx.status] or "Error"
-                
-                -- Determine the error message based on the status and context
-                local error_message = "An error occurred"
-                
-                -- Check for specific error scenarios
-                if ngx.status == 400 then
-                  -- Check if it's from request-validation
-                  if string.find(body, "property") or string.find(body, "schema") or string.find(body, "validation") then
-                    error_message = "Invalid request data or headers"
-                  else
-                    error_message = "Bad Request"
-                  end
-                elseif ngx.status == 401 then
-                  -- Authentication errors
-                  if string.find(body, "API") or string.find(body, "key") or string.find(body, "auth") then
-                    error_message = "Invalid API Key"
-                  else
-                    error_message = "Authentication required"
-                  end
-                elseif ngx.status == 403 then
-                  -- Consumer restriction or forbidden
-                  if string.find(body, "consumer") or string.find(body, "restriction") then
-                    error_message = "Invalid API Key"
-                  else
-                    error_message = "Access forbidden"
-                  end
-                elseif ngx.status == 429 then
-                  error_message = "Rate limit exceeded"
-                elseif ngx.status == 500 then
-                  error_message = "Internal server error"
-                elseif ngx.status == 502 then
-                  error_message = "Bad gateway"
-                elseif ngx.status == 503 then
-                  error_message = "Service unavailable"
-                elseif ngx.status == 504 then
-                  error_message = "Gateway timeout"
+                -- Try to decode JSON body
+                local decoded_body
+                local success, err = pcall(function()
+                  decoded_body = cjson.decode(body)
+                end)
+
+                local response_body
+                local body_replace = false
+
+                if success and decoded_body and decoded_body.error and decoded_body.error.shouldOverride then
+                  -- Custom error format with shouldOverride
+                  decoded_body.error.shouldOverride = nil
+                  decoded_body.error.requestId = request_id
+                  decoded_body.error.timestamp = timestamp
+                  response_body = cjson.encode(decoded_body)
+                  body_replace = true
+                elseif not success then
+                  -- JSON decoding failed, create standardized error format
+                  core.log.error("Failed to decode JSON body: ", err)
+                  response_body = cjson.encode({
+                    error = {
+                      code = ngx.status,
+                      message = body,
+                      requestId = request_id,
+                      timestamp = timestamp
+                    }
+                  })
+                  body_replace = true
                 else
-                  -- Try to extract message from original body
-                  local decoded_body
-                  local success = pcall(function()
-                    decoded_body = cjson.decode(body)
-                  end)
-                  
-                  if success and decoded_body then
-                    if decoded_body.message then
-                      error_message = decoded_body.message
-                    elseif decoded_body.error and type(decoded_body.error) == "string" then
-                      error_message = decoded_body.error
-                    elseif decoded_body.error and decoded_body.error.message then
-                      error_message = decoded_body.error.message
-                    end
-                  end
+                  -- Valid JSON but no shouldOverride, keep original body
+                  response_body = body
+                  body_replace = false
                 end
-                
-                -- Create the standardized error response
-                local response_body = cjson.encode({
-                  error = error_name,
-                  message = error_message
-                })
-                
-                -- Replace the body with our formatted error
+
                 ngx.arg[1] = response_body
-                ngx.arg[2] = true
+                ngx.arg[2] = body_replace
               end
             end
