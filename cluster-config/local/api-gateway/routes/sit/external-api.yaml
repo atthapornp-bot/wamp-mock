@@ -27,7 +27,8 @@ spec:
           weight: 100
 
       # Reference to comprehensive error handling plugin configuration
-      plugin_config_name: global-plugin
+      # plugin_config_name: global-plugin
+      
 
       # Additional plugins that apply to this route
       plugins:
@@ -35,3 +36,41 @@ spec:
           enable: true
           config:
             regex_uri: ["^/sit/api/v1/external(?:/(.*))?/?$", "/v1/$1"]
+        - name: request-validation
+          enable: true
+          config:
+            header_schema:
+              type: object
+              properties:
+                X-API-KEY:
+                  type: string
+                  minLength: 10
+                  pattern: "^[A-Za-z0-9_-]+$"
+              required: ["X-API-KEY"]
+            body_schema:
+              type: object
+        - name: consumer-restriction
+          enable: true
+          config:
+            _meta:
+              error_response:
+                error:
+                  shouldOverride: true
+                  code: 401
+                  errorMessageTH: "API Key ไม่ถูกต้อง"
+                  errorMessageEN: "Invalid API Key"
+            whitelist: # Naming does not allow hyphen (-) in the name, it needs to be replaced with underscore (_)
+              - "apisix_system_api_client_oapi_sit"
+        - name: key-auth
+          enable: true
+          config:
+            _meta:
+              error_response:
+                error:
+                  shouldOverride: true
+                  code: 401
+                  errorMessageTH: "API Key ไม่ถูกต้อง"
+                  errorMessageEN: "Invalid API Key"
+            # The header where the API key should be provided
+            # Clients will send: X-API-Key: <your-api-key>
+            header: X-API-KEY

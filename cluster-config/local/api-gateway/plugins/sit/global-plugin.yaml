@@ -19,6 +19,13 @@ spec:
     - name: request-validation
       enable: true
       config:
+        _meta:
+          error_response:
+            error:
+              shouldOverride: true
+              code: 400
+              errorMessageTH: "ข้อมูล หรือ headers ที่ส่งมาไม่ถูกต้อง"
+              errorMessageEN: "Invalid request data or headers"
         header_schema:
           type: object
           properties:
@@ -34,6 +41,13 @@ spec:
     - name: limit-count
       enable: true
       config:
+        _meta:
+          error_response:
+            error:
+              shouldOverride: true
+              code: 429
+              errorMessageTH: "การจำกัดอัตราการเรียกใช้งานเกินขีดจำกัด"
+              errorMessageEN: "Rate limit exceeded"
         count: 10000
         time_window: 3600
         rejected_code: 429
@@ -44,6 +58,13 @@ spec:
     - name: consumer-restriction
       enable: true
       config:
+        _meta:
+          error_response:
+            error:
+              shouldOverride: true
+              code: 401
+              errorMessageTH: "API Key ไม่ถูกต้อง"
+              errorMessageEN: "Invalid API Key"
         whitelist: # Naming does not allow hyphen (-) in the name, it needs to be replaced with underscore (_)
           - "apisix_system_api_client_mtl_sit"
           - "apisix_system_api_client_kx_sit"
@@ -54,6 +75,14 @@ spec:
     - name: key-auth
       enable: true
       config:
+        _meta:
+          error_response:
+            error:
+              shouldOverride: true
+              code: 401
+              errorMessageTH: "API Key ไม่ถูกต้อง"
+              errorMessageEN: "Invalid API Key"
+        # The header where the API key should be provided
         # Clients will send: X-API-Key: <your-api-key>
         header: X-API-KEY
 
@@ -127,4 +156,3 @@ spec:
                 end
               end
             end
-
