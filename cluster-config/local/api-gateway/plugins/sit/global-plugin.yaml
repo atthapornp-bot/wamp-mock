@@ -15,27 +15,6 @@ spec:
         header_name: "X-Request-ID"
         algorithm: "uuid"
 
-    # Request validation (default priority: 2999)
-    # - name: request-validation
-    #   enable: true
-    #   config:
-    #     _meta:
-    #       error_response:
-    #         error:
-    #           # shouldOverride: true
-    #           code: 400
-    #           errorMessageTH: "ข้อมูล หรือ headers ที่ส่งมาไม่ถูกต้อง"
-    #           errorMessageEN: "Invalid request data or headers"
-    #     header_schema:
-    #       type: object
-    #       properties:
-    #         X-API-KEY:
-    #           type: string
-    #           minLength: 10
-    #           pattern: "^[A-Za-z0-9_-]+$"
-    #       required: ["X-API-KEY"]
-    #     body_schema:
-    #       type: object
 
     # Rate limiting (default priority: 1002)
     - name: limit-count
