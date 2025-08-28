@@ -66,8 +66,10 @@ spec:
               errorMessageTH: "API Key ไม่ถูกต้อง"
               errorMessageEN: "Invalid API Key"
         whitelist: # Naming does not allow hyphen (-) in the name, it needs to be replaced with underscore (_)
-          - "apisix_system_api_client_mtl_uat"
-          - "apisix_system_api_client_kx_uat"
+          - "apisix_system_api_client_mtl_sit"
+          - "apisix_system_api_client_kx_sit"
+          - "apisix_system_api_client_dataservice_sit"
+          - "apisix_system_api_client_oapi_sit"
 
     # Key authentication (default priority: 1000)
     - name: key-auth
