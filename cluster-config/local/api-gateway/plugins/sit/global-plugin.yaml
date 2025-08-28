@@ -22,7 +22,7 @@ spec:
         _meta:
           error_response:
             error:
-              shouldOverride: true
+              # shouldOverride: true
               code: 400
               errorMessageTH: "ข้อมูล หรือ headers ที่ส่งมาไม่ถูกต้อง"
               errorMessageEN: "Invalid request data or headers"
@@ -44,7 +44,7 @@ spec:
         _meta:
           error_response:
             error:
-              shouldOverride: true
+              # shouldOverride: true
               code: 429
               errorMessageTH: "การจำกัดอัตราการเรียกใช้งานเกินขีดจำกัด"
               errorMessageEN: "Rate limit exceeded"
@@ -61,7 +61,7 @@ spec:
         _meta:
           error_response:
             error:
-              shouldOverride: true
+              # shouldOverride: true
               code: 401
               errorMessageTH: "API Key ไม่ถูกต้อง"
               errorMessageEN: "Invalid API Key"
@@ -78,7 +78,7 @@ spec:
         _meta:
           error_response:
             error:
-              shouldOverride: true
+              # shouldOverride: true
               code: 401
               errorMessageTH: "API Key ไม่ถูกต้อง"
               errorMessageEN: "Invalid API Key"
