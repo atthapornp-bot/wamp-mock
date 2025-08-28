@@ -2,7 +2,7 @@ apiVersion: apisix.apache.org/v2
 kind: ApisixPluginConfig
 metadata:
   name: global-plugin
-  namespace: wamp-uat
+  namespace: wamp-sit
   labels:
     app: apisix
 spec:
