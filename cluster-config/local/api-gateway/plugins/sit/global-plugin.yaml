@@ -5,7 +5,7 @@ metadata:
   namespace: wamp-sit
   labels:
     app: apisix
-spec:
+spec: 
   plugins:
     # Generate request ID first (default priority: 12015)
     - name: request-id

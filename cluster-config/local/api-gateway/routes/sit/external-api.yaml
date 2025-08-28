@@ -28,7 +28,7 @@ spec:
 
       # Reference to comprehensive error handling plugin configuration
       plugin_config_name: global-plugin
-
+ 
       # Additional plugins that apply to this route
       plugins:
         - name: proxy-rewrite

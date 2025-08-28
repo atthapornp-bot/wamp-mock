@@ -11,4 +11,4 @@ spec:
         # The API key that this consumer will use
         # In production, you'd want to generate a secure random key
         key: "Riew9yic0uogh1laoyiev7eagaghanaw"
-  
+   
