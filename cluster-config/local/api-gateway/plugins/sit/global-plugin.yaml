@@ -8,24 +8,24 @@ metadata:
 spec:
   plugins:
     # Generate request ID first (default priority: 12015)
-    - name: request-id
-      enable: true
-      config:
-        include_in_response: true
-        header_name: "X-Request-ID"
-        algorithm: "uuid"
+    # - name: request-id
+    #   enable: true
+    #   config:
+    #     include_in_response: true
+    #     header_name: "X-Request-ID"
+    #     algorithm: "uuid"
 
     # Request validation (default priority: 2999)
     - name: request-validation
       enable: true
       config:
-        _meta:
-          error_response:
-            error:
-              shouldOverride: true
-              code: 400
-              errorMessageTH: "ข้อมูล หรือ headers ที่ส่งมาไม่ถูกต้อง"
-              errorMessageEN: "Invalid request data or headers"
+        # _meta:
+        #   error_response:
+        #     error:
+        #       shouldOverride: true
+        #       code: 400
+        #       errorMessageTH: "ข้อมูล หรือ headers ที่ส่งมาไม่ถูกต้อง"
+        #       errorMessageEN: "Invalid request data or headers"
         header_schema:
           type: object
           properties:
