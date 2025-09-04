@@ -122,6 +122,22 @@ spec:
                     upload_timeout     1m
                     use_put_object     On
                     storage_class STANDARD_IA
+
+                [OUTPUT]
+                    Name loki
+                    Match wamp*
+                    # Loki endpoint configuration
+                    uri http://loki.loki:3100/loki/api/v1/push
+                    # Labels for log streams - Loki uses labels for indexing
+                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
+                    # Remove metadata to reduce log size
+                    remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
+                    # Auto kubernetes labels - adds all k8s labels as Loki labels
+                    auto_kubernetes_labels on
+                    # Tenant ID for multi-tenant Loki setups
+                    tenant_id wamp
+                    # Line format - how to format the log line
+                    line_format json
               
               # Custom parsers for different log formats
               customParsers: |
