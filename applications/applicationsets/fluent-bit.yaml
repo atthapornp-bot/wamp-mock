@@ -122,14 +122,16 @@ spec:
                     Regex kubernetes_namespace_name ^(wamp-sit|wamp-uat|wamp-training)$
                 
                 [FILTER]
-                    Name rewrite_tag
+                    Name modify
                     Match kube.*
-                    Rule $kubernetes['namespace_name'] .* $kubernetes['namespace_name'].$TAG false
+                    Add app_name ${kubernetes_labels_app}
+                    Add pod_name ${kubernetes_pod_name}
+                    Add container_name ${kubernetes_container_name}
                 
                 [FILTER]
                     Name rewrite_tag
-                    Match *.*.*.*.*
-                    rule $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
+                    Match kube.*
+                    Rule $kubernetes['namespace_name'] .* $kubernetes['namespace_name'].$kubernetes['labels']['app'].$kubernetes['pod_name'] false
                     
               # Output plugins - where logs go
               outputs: |
@@ -138,7 +140,7 @@ spec:
                     Match *
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
-                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S.log
+                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]-%Y%m%d-%H%M%S-%{Sequence}.log
                     s3_key_format_tag_delimiters .
                     content_type      text/plain
                     total_file_size    10M
