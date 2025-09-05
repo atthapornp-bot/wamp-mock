@@ -104,6 +104,18 @@ spec:
               filters: |
                 # First filter: Extract Kubernetes metadata from file paths and container info
                 [FILTER]
+                    Name kubernetes
+                    Match wamp*
+                    Kube_URL https://kubernetes.default.svc:443
+                    Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                    Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
+                    Kube_Tag_Prefix wamp.
+                    Merge_Log On
+                    Keep_Log Off
+                    K8S-Logging.Parser On
+                    K8S-Logging.Exclude On
+                
+                [FILTER]
                     Name rewrite_tag
                     Match wamp-app
                     rule $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
@@ -115,7 +127,7 @@ spec:
                     Match wamp*
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
-                    s3_key_format     /kubernetes-logs/${WAMP_NAMESPACE}/$TAG[0]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]/$TAG[1]-$TAG[2]-%Y%m%d-%H%M%S.log
+                    s3_key_format     /kubernetes-logs/$kubernetes_namespace_name/$TAG[0]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]/$TAG[1]-$TAG[2]-%Y%m%d-%H%M%S.log
                     s3_key_format_tag_delimiters .
                     content_type      text/plain
                     total_file_size    10M
@@ -165,8 +177,6 @@ spec:
                 value: "wamp-nonprod"
               - name: AWS_REGION
                 value: "ap-southeast-1"
-              - name: WAMP_NAMESPACE
-                value: wamp-sit
               - name: AWS_ACCESS_KEY_ID
                 valueFrom:
                   secretKeyRef:
