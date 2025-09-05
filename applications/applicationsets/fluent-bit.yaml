@@ -116,10 +116,10 @@ spec:
                     Annotations Off
                     Labels On
                 
-                # [FILTER]
-                #     Name grep
-                #     Match kube.*
-                #     Regex kubernetes_namespace_name ^(wamp-sit|wamp-uat|wamp-training)$
+                [FILTER]
+                    Name grep
+                    Match kube.*
+                    Regex kubernetes_namespace_name ^(wamp-sit|wamp-uat|wamp-training)$
                 
                 [FILTER]
                     Name rewrite_tag
