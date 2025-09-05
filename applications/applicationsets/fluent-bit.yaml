@@ -123,7 +123,7 @@ spec:
               outputs: |
                 [OUTPUT]
                     Name s3
-                    Match *
+                    Match kube.*
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     s3_key_format     /kubernetes-logs/$kubernetes_namespace_name/$TAG[0]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]/$TAG[1]-$TAG[2]-%Y%m%d-%H%M%S.log
@@ -136,7 +136,7 @@ spec:
 
                 [OUTPUT]
                     Name loki
-                    Match *
+                    Match kube.*
                     # Loki endpoint configuration
                     uri http://loki.loki:3100/loki/api/v1/push
                     # Labels for log streams - Loki uses labels for indexing
