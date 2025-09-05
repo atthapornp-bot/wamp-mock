@@ -93,7 +93,7 @@ spec:
                     # Use CRI parser since most K8s clusters use containerd/CRI-O
                     Parser            json_parser
                     # Tag pattern - this creates structured tags for filtering
-                    Tag               kube.*
+                    Tag               wamp-app
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
                     # Refresh interval for discovering new files
@@ -104,32 +104,18 @@ spec:
               filters: |
                 # First filter: Extract Kubernetes metadata from file paths and container info
                 [FILTER]
-                    Name kubernetes
-                    Match kube.*
-                    Kube_URL https://kubernetes.default.svc:443
-                    Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                    Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
-                    Merge_Log On
-                    Keep_Log Off
-                    K8S-Logging.Parser On
-                    K8S-Logging.Exclude On
-                    Annotations Off
-                    Labels On
-                
-                
-                [FILTER]
                     Name rewrite_tag
-                    Match kube.*
-                    Rule $kubernetes['namespace_name'] .* $kubernetes['namespace_name'].$kubernetes['labels']['app'].$kubernetes['container_name'] false
+                    Match wamp-app
+                    rule $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
                     
               # Output plugins - where logs go
               outputs: |
                 [OUTPUT]
                     Name s3
-                    Match *
+                    Match wamp*
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
-                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]-%Y%m%d-%H%M%S-%{Sequence}.log
+                    s3_key_format     /kubernetes-logs/${WAMP_NAMESPACE}/$TAG[0]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]/$TAG[1]-$TAG[2]-%Y%m%d-%H%M%S.log
                     s3_key_format_tag_delimiters .
                     content_type      text/plain
                     total_file_size    10M
@@ -139,7 +125,7 @@ spec:
 
                 [OUTPUT]
                     Name loki
-                    Match *
+                    Match wamp*
                     # Loki endpoint configuration
                     uri http://loki.loki:3100/loki/api/v1/push
                     # Labels for log streams - Loki uses labels for indexing
@@ -179,6 +165,8 @@ spec:
                 value: "wamp-nonprod"
               - name: AWS_REGION
                 value: "ap-southeast-1"
+              - name: WAMP_NAMESPACE
+                value: wamp-sit
               - name: AWS_ACCESS_KEY_ID
                 valueFrom:
                   secretKeyRef:
