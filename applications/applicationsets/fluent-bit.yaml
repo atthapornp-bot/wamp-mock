@@ -122,16 +122,9 @@ spec:
                     Regex kubernetes_namespace_name ^(wamp-sit|wamp-uat|wamp-training)$
                 
                 [FILTER]
-                    Name modify
-                    Match kube.*
-                    Add app_name ${kubernetes_labels_app}
-                    Add pod_name ${kubernetes_pod_name}
-                    Add container_name ${kubernetes_container_name}
-                
-                [FILTER]
                     Name rewrite_tag
                     Match kube.*
-                    Rule $kubernetes['namespace_name'] .* $kubernetes['namespace_name'].$kubernetes['labels']['app'].$kubernetes['pod_name'] false
+                    Rule $kubernetes['namespace_name'] .* $kubernetes['namespace_name'].$kubernetes['labels']['app'].$kubernetes['container_name'] false
                     
               # Output plugins - where logs go
               outputs: |
