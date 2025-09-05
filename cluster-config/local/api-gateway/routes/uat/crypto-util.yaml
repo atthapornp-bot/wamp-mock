@@ -24,7 +24,7 @@ spec:
           weight: 100
 
       # Reference to comprehensive error handling plugin configuration
-      plugin_config_name: global-plugin
+      plugin_config_name: global-plugin-uat
 
       # Additional plugins that apply to this route
       plugins:
