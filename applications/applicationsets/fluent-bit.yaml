@@ -81,7 +81,8 @@ spec:
                     storage.sync  normal
                     storage.checksum off
                     storage.backlog.mem_limit 50M
-                    Parsers_File /fluent-bit/etc/parser.conf
+                    Parsers_File /fluent-bit/etc/parsers.conf
+                    Parsers_File /fluent-bit/etc/custom_parsers.conf
 
               # Input plugins - where logs come from
               inputs: |
@@ -133,6 +134,10 @@ spec:
               # Custom parsers for different log formats
               customParsers: |
                 [PARSER]
+                    Name json_parser
+                    Format json
+                
+                [PARSER]
                     Name docker_no_time
                     Format json
                     Time_Keep Off
@@ -145,10 +150,6 @@ spec:
                     Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
                     Time_Key time
                     Time_Format %Y-%m-%dT%H:%M:%S.%L%z
-
-                [PARSER]
-                    Name json_parser
-                    Format json
 
             # Environment variables for configuration
             env:
