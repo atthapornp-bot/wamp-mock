@@ -88,15 +88,8 @@ spec:
                 [INPUT]
                     # Use the stdin input plugin to read container logs
                     Name              stdin
-                    # Use CRI parser since most K8s clusters use containerd/CRI-O
                     Parser            json_parser
-                    # Tag pattern - this creates structured tags for filtering
                     Tag               log-app
-                    # Memory buffer limit per file
-                    Mem_Buf_Limit     50MB
-                    # Refresh interval for discovering new files
-                    Refresh_Interval  1
-                    Rotate_Wait       5
 
               # Filters - transform and enrich logs
               filters: |
