@@ -86,14 +86,12 @@ spec:
               # Input plugins - where logs come from
               inputs: |
                 [INPUT]
-                    # Use the tail input plugin to read container logs
-                    Name              tail
-                    # Path where Kubernetes stores container logs
-                    Path              /var/log/containers/*.log
+                    # Use the stdin input plugin to read container logs
+                    Name              stdin
                     # Use CRI parser since most K8s clusters use containerd/CRI-O
                     Parser            json_parser
                     # Tag pattern - this creates structured tags for filtering
-                    Tag               wamp-app
+                    Tag               log-app
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
                     # Refresh interval for discovering new files
@@ -105,7 +103,7 @@ spec:
                 # First filter: Extract Kubernetes metadata from file paths and container info
                 [FILTER]
                     Name rewrite_tag
-                    Match wamp-app
+                    Match log-app
                     rule $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
                     
               # Output plugins - where logs go
