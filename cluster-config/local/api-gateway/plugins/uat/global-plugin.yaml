@@ -8,30 +8,30 @@ metadata:
 spec:
   plugins:
     # Generate request ID first (default priority: 12015)
-    # - name: request-id
-    #   enable: true
-    #   config:
-    #     include_in_response: true
-    #     header_name: "X-Request-ID"
-    #     algorithm: "uuid"
+    - name: request-id
+      enable: true
+      config:
+        include_in_response: true
+        header_name: "X-Request-ID"
+        algorithm: "uuid"
 
 
     # Rate limiting (default priority: 1002)
-    # - name: limit-count
-    #   enable: true
-    #   config:
-    #     # _meta:
-    #     #   error_response:
-    #     #     error:
-    #     #       # shouldOverride: true
-    #     #       code: 429
-    #     #       errorMessageTH: "การจำกัดอัตราการเรียกใช้งานเกินขีดจำกัด"
-    #     #       errorMessageEN: "Rate limit exceeded"
-    #     count: 10000
-    #     time_window: 3600
-    #     rejected_code: 429
-    #     rejected_msg: "Route-specific rate limit exceeded"
-    #     policy: "local"
+    - name: limit-count
+      enable: true
+      config:
+        # _meta:
+        #   error_response:
+        #     error:
+        #       # shouldOverride: true
+        #       code: 429
+        #       errorMessageTH: "การจำกัดอัตราการเรียกใช้งานเกินขีดจำกัด"
+        #       errorMessageEN: "Rate limit exceeded"
+        count: 10000
+        time_window: 3600
+        rejected_code: 429
+        rejected_msg: "Route-specific rate limit exceeded"
+        policy: "local"
 
     # Consumer restriction (default priority: 2400)
     - name: consumer-restriction
