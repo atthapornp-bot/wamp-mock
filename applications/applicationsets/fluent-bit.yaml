@@ -66,48 +66,24 @@ spec:
               # Service configuration - defines global behavior
               service: |
                 [SERVICE]
-                    # Daemon Off means FluentBit runs as a DaemonSet
-                    Daemon Off
-                    # Flush interval - how often to send logs (in seconds)
-                    Flush 5
-                    # Set the logging level for Fluent Bit itself
-                    Log_Level info
-                    # HTTP server for health checks and metrics
-                    HTTP_Server On
-                    HTTP_Listen 0.0.0.0
-                    HTTP_Port 2020
-                    # Storage settings for buffering
-                    storage.path  /var/log/flb-storage/
-                    storage.sync  normal
-                    storage.checksum off
-                    storage.backlog.mem_limit 50M
-                    Parsers_File /fluent-bit/etc/parser.conf
+                  Flush         1
+                  Parsers_File  ./parser.conf
+                  Hot_Reload    On
 
               # Input plugins - where logs come from
               inputs: |
                 [INPUT]
-                    # Use the tail input plugin to read container logs
-                    Name              tail
-                    # Path where Kubernetes stores container logs
-                    Path              /var/log/containers/*.log
-                    # Use CRI parser since most K8s clusters use containerd/CRI-O
-                    Parser            json_parser
-                    # Tag pattern - this creates structured tags for filtering
-                    Tag               wamp-app
-                    # Memory buffer limit per file
-                    Mem_Buf_Limit     50MB
-                    # Refresh interval for discovering new files
-                    Refresh_Interval  1
-                    Rotate_Wait       5
+                  Name    stdin
+                  Tag     log-app
+                  Parser  json_parser
 
               # Filters - transform and enrich logs
               filters: |
                 # First filter: Extract Kubernetes metadata from file paths and container info
                 [FILTER]
-                    Name rewrite_tag
-                    Match wamp-app
-                    rule $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
-                    
+                  Name  rewrite_tag
+                  Match log-app
+                  rule  $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
               # Output plugins - where logs go
               outputs: |
                 [OUTPUT]
@@ -116,12 +92,10 @@ spec:
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
                     s3_key_format     /kubernetes-logs/${WAMP_NAMESPACE}/$TAG[0]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]/$TAG[1]-$TAG[2]-%Y%m%d-%H%M%S.log
-                    s3_key_format_tag_delimiters .
                     content_type      text/plain
                     total_file_size    10M
-                    upload_timeout     1m
                     use_put_object     On
-                    storage_class STANDARD_IA
+                    static_file_path   true
 
                 [OUTPUT]
                     Name loki
@@ -141,20 +115,6 @@ spec:
               
               # Custom parsers for different log formats
               customParsers: |
-                [PARSER]
-                    Name docker_no_time
-                    Format json
-                    Time_Keep Off
-                    Time_Key time
-                    Time_Format %Y-%m-%dT%H:%M:%S.%L
-                    
-                [PARSER]
-                    Name containerd
-                    Format regex
-                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
-                    Time_Key time
-                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
-
                 [PARSER]
                     Name json_parser
                     Format json
