@@ -90,11 +90,14 @@ spec:
                     # Use the tail input plugin to read container logs
                     Name              tail
                     # Path where Kubernetes stores container logs
-                    Path              /var/log/containers/*.log
+                    Path              /var/log/containers/*wamp*.log
                     # Use CRI parser since most K8s clusters use containerd/CRI-O
-                    Parser            json_parser
-                    # Tag pattern - this creates structured tags for filtering
-                    Tag               wamp-app
+                    Parser            cri
+                    # Tag pattern - extract namespace, app, pod, and container from filename
+                    # Example: /var/log/containers/wamp-api-697fb68ddb-kt56t_wamp-sit_activity-log-123456.log
+                    # Results in tag: wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
+                    Tag_Regex         (?<pod_name>[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)\.log$
+                    Tag               <namespace_name>.<pod_name>.<container_name>
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
                     # Refresh interval for discovering new files
@@ -103,11 +106,22 @@ spec:
 
               # Filters - transform and enrich logs
               filters: |
-                # First filter: Extract Kubernetes metadata from file paths and container info
+                # First filter: Parse and rewrite tags to extract app name and log type
+                [FILTER]
+                    Name parser
+                    Match *
+                    Key_Name log
+                    Parser json_parser
+                    Reserve_Data On
+
+                # Second filter: Rewrite tags to proper format
                 [FILTER]
                     Name rewrite_tag
-                    Match wamp-app
-                    rule $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
+                    Match *
+                    # Extract namespace, appName (from pod prefix), podName, and log_type (from container)
+                    # Input: wamp-sit.wamp-api-697fb68ddb-kt56t.activity-log
+                    # Output: wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
+                    Rule $TAG ^([^.]+)\.([^-]+)-([^.]+)\.(.+)$ $1.$2.$2-$3.$4 false
                     
               # Output plugins - where logs go
               outputs: |
@@ -116,7 +130,9 @@ spec:
                     Match wamp*
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
-                    s3_key_format     /kubernetes-logs/${WAMP_NAMESPACE}/$TAG[0]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]/$TAG[1]-$TAG[2]-%Y%m%d-%H%M%S.log
+                    # S3 key format: /kubernetes-logs/namespace/appName/year=YYYY/month=MM/day=DD/hour=HH/podName/podName-logType-YYYYMMDD-HHMMSS.log
+                    # Example: /kubernetes-logs/wamp-sit/wamp-api/year=2025/month=09/day=12/hour=03/wamp-api-697fb68ddb-kt56t/wamp-api-697fb68ddb-kt56t-activity_log-20250912-032609.log
+                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S.log
                     s3_key_format_tag_delimiters .
                     content_type      text/plain
                     total_file_size    10M
@@ -148,13 +164,21 @@ spec:
                     Time_Keep Off
                     Time_Key time
                     Time_Format %Y-%m-%dT%H:%M:%S.%L
-                    
+
                 [PARSER]
                     Name containerd
                     Format regex
                     Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
                     Time_Key time
                     Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+                [PARSER]
+                    Name cri
+                    Format regex
+                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+                    Decode_Field_As json log
 
                 [PARSER]
                     Name json_parser
