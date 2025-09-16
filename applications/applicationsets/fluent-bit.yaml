@@ -114,17 +114,18 @@ spec:
                     Parser json_parser
                     Reserve_Data On
 
-                # Second filter: Rewrite tags to extract app name from pod name
+                # Second filter: Rewrite tags for different app names
                 [FILTER]
                     Name rewrite_tag
                     Match *
-                    # Extract namespace and pod name, then derive app name
-                    # Input tag: wamp-sit.wamp-api-665c49874b-tf8wk
-                    # Output tag: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
-                    # Pattern matches: namespace.appname-deploymenthash-replicaid
-                    # Where deploymenthash is 10 chars and replicaid is 5 chars
-                    Rule $TAG ^([^.]+)\.([^-]+-[^-]+)-([a-z0-9]{10})-([a-z0-9]{5})$ $1.$2.$2-$3-$4.activity_log false
-                    Rule $TAG ^([^.]+)\.([^-]+)-([a-z0-9]{10})-([a-z0-9]{5})$ $1.$2.$2-$3-$4.activity_log false
+                    # Rules for each known app - extract namespace, app name, and full pod name
+                    # Input: wamp-sit.wamp-api-665c49874b-tf8wk
+                    # Output: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
+                    Rule $TAG ^([^\.]+)\.(wamp-api-[a-z0-9]{10}-[a-z0-9]{5})$ $1.wamp-api.$2.activity_log false
+                    Rule $TAG ^([^\.]+)\.(wamp-crypto-util-[a-z0-9]{10}-[a-z0-9]{5})$ $1.wamp-crypto-util.$2.activity_log false
+                    Rule $TAG ^([^\.]+)\.(wamp-external-api-[a-z0-9]{10}-[a-z0-9]{5})$ $1.wamp-external-api.$2.activity_log false
+                    Rule $TAG ^([^\.]+)\.(wamp-job-housekeeping-[a-z0-9]{10}-[a-z0-9]{5})$ $1.wamp-job-housekeeping.$2.activity_log false
+                    Rule $TAG ^([^\.]+)\.(wamp-job-occupation-[a-z0-9]{10}-[a-z0-9]{5})$ $1.wamp-job-occupation.$2.activity_log false
                     
               # Output plugins - where logs go
               outputs: |
