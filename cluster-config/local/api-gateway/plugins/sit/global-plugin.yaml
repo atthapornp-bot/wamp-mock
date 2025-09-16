@@ -17,14 +17,14 @@ spec:
 
 
     # Rate limiting (default priority: 1002)
-    - name: limit-count
-      enable: true
-      config:
-        count: 10000
-        time_window: 3600
-        rejected_code: 429
-        rejected_msg: "Route-specific rate limit exceeded"
-        policy: "local"
+    # - name: limit-count
+    #   enable: true
+    #   config:
+    #     count: 10000
+    #     time_window: 3600
+    #     rejected_code: 429
+    #     rejected_msg: "Route-specific rate limit exceeded"
+    #     policy: "local"
 
     # Consumer restriction (default priority: 2400)
     - name: consumer-restriction
