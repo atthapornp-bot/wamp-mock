@@ -147,7 +147,7 @@ spec:
                     total_file_size    10M
                     upload_timeout     1m
                     use_put_object     On
-                    storage_class STANDARD_IA
+                    static_file_path   true
 
                 [OUTPUT]
                     Name loki
