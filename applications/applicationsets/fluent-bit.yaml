@@ -75,22 +75,16 @@ spec:
                 [INPUT]
                   Name    stdin
                   Tag     log-app
+                  Parser  json_parser
 
               # Filters - transform and enrich logs
               filters: |
-                # Parse JSON logs using built-in json parser
-                [FILTER]
-                  Name  parser
-                  Match log-app
-                  Key_Name log
-                  Parser json
-                  Reserve_Data On
-
-                # Extract and rewrite tags based on app name
+                # First filter: Extract Kubernetes metadata from file paths and container info
                 [FILTER]
                   Name  rewrite_tag
                   Match log-app
                   rule  $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
+
               # Output plugins - where logs go
               outputs: |
                 [OUTPUT]
@@ -119,6 +113,12 @@ spec:
                     tenant_id wamp
                     # Line format - how to format the log line
                     line_format json
+
+              # Custom parsers for different log formats
+              customParsers: |
+                [PARSER]
+                    Name json_parser
+                    Format json
 
             # Environment variables for configuration
             env:
