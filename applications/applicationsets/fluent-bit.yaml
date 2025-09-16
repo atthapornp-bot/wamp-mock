@@ -91,34 +91,34 @@ spec:
                     Name              tail
                     # Path where Kubernetes stores container logs
                     Path              /var/log/containers/*wamp*.log
+                    # Exclude unwanted logs
+                    Exclude_Path      /var/log/containers/*fluentbit*,/var/log/containers/*fluentd*
                     # Use CRI parser since most K8s clusters use containerd/CRI-O
                     Parser            cri
-                    # Tag pattern - extract namespace, pod, and container from filename
-                    # Example: /var/log/containers/wamp-api-697fb68ddb-kt56t_wamp-sit_wamp-api-d789ea143ef6186782ec84f0b85a25d6ff0a141c8780383340ede2f4e2f9f07d.log
-                    # Initial tag: wamp-sit.wamp-api-697fb68ddb-kt56t.wamp-api
-                    Tag_Regex         (?<pod_name>[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)\.log$
-                    Tag               <namespace_name>.<pod_name>
+                    # Default tag - will be overwritten by filters
+                    Tag               kube.*
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
                     # Refresh interval for discovering new files
                     Refresh_Interval  1
                     Rotate_Wait       5
+                    # Store path for processing
+                    Path_Key          source
 
               # Filters - transform and enrich logs
               filters: |
-                # First filter: Rewrite tags FIRST before parsing
+                # First filter: Rewrite tags - MUST match the incoming tag pattern
                 [FILTER]
                     Name rewrite_tag
-                    Match *
-                    # Rules for each known app - extract namespace, app name, and full pod name
-                    # Input: wamp-sit.wamp-api-665c49874b-tf8wk
-                    # Output: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
-                    Rule $TAG ^([^.]+)\.(wamp-api-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-api.$2.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-crypto-util-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-crypto-util.$2.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-external-api-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-external-api.$2.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-job-housekeeping-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-job-housekeeping.$2.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-job-occupation-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-job-occupation.$2.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-web-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-web.$2.activity_log false
+                    Match wamp-*
+                    # Match format: namespace.podname -> namespace.appname.podname.logtype
+                    # wamp-sit.wamp-api-665c49874b-tf8wk -> wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
+                    Rule $TAG (wamp-[^.]+)\.(wamp-api-.*) $1.wamp-api.$2.activity_log false
+                    Rule $TAG (wamp-[^.]+)\.(wamp-crypto-util-.*) $1.wamp-crypto-util.$2.activity_log false
+                    Rule $TAG (wamp-[^.]+)\.(wamp-external-api-.*) $1.wamp-external-api.$2.activity_log false
+                    Rule $TAG (wamp-[^.]+)\.(wamp-job-housekeeping-.*) $1.wamp-job-housekeeping.$2.activity_log false
+                    Rule $TAG (wamp-[^.]+)\.(wamp-job-occupation-.*) $1.wamp-job-occupation.$2.activity_log false
+                    Rule $TAG (wamp-[^.]+)\.(wamp-web-.*) $1.wamp-web.$2.activity_log false
 
                 # Second filter: Parse log content if it's JSON
                 [FILTER]
@@ -188,6 +188,11 @@ spec:
                 [PARSER]
                     Name json_parser
                     Format json
+
+                [PARSER]
+                    Name extract_pod_info
+                    Format regex
+                    Regex ^/var/log/containers/(?<pod_name>[^_]+)_(?<namespace_name>[^_]+)_(?<container_name>[^.]+)\.log$
 
             # Environment variables for configuration
             env:
