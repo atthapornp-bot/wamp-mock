@@ -107,18 +107,18 @@ spec:
               filters: |
                 # First filter: Rewrite tags based on the incoming tag pattern
                 # The tag from tail input with kube.* will be like:
-                # kube.var.log.containers.wamp-api-665c49874b-tf8wk_wamp-sit_wamp-api-xxx.log
+                # kube.wamp-api-665c49874b-tf8wk_wamp-sit_wamp-api-xxx.log
                 [FILTER]
                     Name rewrite_tag
                     Match kube.*
                     # Extract pod, namespace from the tag and create new tag structure
-                    # Pattern: kube.var.log.containers.POD_NAMESPACE_CONTAINER.log
-                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-api-[^_]+)_([^_]+)_.+\.log$ $2.wamp-api.$1.activity_log false
-                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-crypto-util-[^_]+)_([^_]+)_.+\.log$ $2.wamp-crypto-util.$1.activity_log false
-                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-external-api-[^_]+)_([^_]+)_.+\.log$ $2.wamp-external-api.$1.activity_log false
-                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-job-housekeeping-[^_]+)_([^_]+)_.+\.log$ $2.wamp-job-housekeeping.$1.activity_log false
-                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-job-occupation-[^_]+)_([^_]+)_.+\.log$ $2.wamp-job-occupation.$1.activity_log false
-                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-web-[^_]+)_([^_]+)_.+\.log$ $2.wamp-web.$1.activity_log false
+                    # Pattern: kube.POD_NAMESPACE_CONTAINER.log
+                    Rule $TAG ^kube\.(wamp-api-[^_]+)_([^_]+)_.+\.log$ $2.wamp-api.$1.activity_log false
+                    Rule $TAG ^kube\.(wamp-crypto-util-[^_]+)_([^_]+)_.+\.log$ $2.wamp-crypto-util.$1.activity_log false
+                    Rule $TAG ^kube\.(wamp-external-api-[^_]+)_([^_]+)_.+\.log$ $2.wamp-external-api.$1.activity_log false
+                    Rule $TAG ^kube\.(wamp-job-housekeeping-[^_]+)_([^_]+)_.+\.log$ $2.wamp-job-housekeeping.$1.activity_log false
+                    Rule $TAG ^kube\.(wamp-job-occupation-[^_]+)_([^_]+)_.+\.log$ $2.wamp-job-occupation.$1.activity_log false
+                    Rule $TAG ^kube\.(wamp-web-[^_]+)_([^_]+)_.+\.log$ $2.wamp-web.$1.activity_log false
 
                 # Second filter: Parse log content if it's JSON
                 [FILTER]
