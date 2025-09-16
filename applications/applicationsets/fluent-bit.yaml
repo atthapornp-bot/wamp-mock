@@ -66,7 +66,21 @@ spec:
               # Service configuration - defines global behavior
               service: |
                 [SERVICE]
-                  Flush         1
+                  # Daemon Off means FluentBit runs as a DaemonSet
+                  Daemon Off
+                  # Flush interval - how often to send logs (in seconds)
+                  Flush 5
+                  # Set the logging level for Fluent Bit itself
+                  Log_Level info
+                  # HTTP server for health checks and metrics
+                  HTTP_Server On
+                  HTTP_Listen 0.0.0.0
+                  HTTP_Port 2020
+                  # Storage settings for buffering
+                  storage.path  /var/log/flb-storage/
+                  storage.sync  normal
+                  storage.checksum off
+                  storage.backlog.mem_limit 50M
                   Parsers_File  /fluent-bit/etc/parsers.conf
                   Parsers_File  /fluent-bit/etc/conf/custom_parsers.conf
                   Hot_Reload    On
@@ -75,12 +89,11 @@ spec:
               inputs: |
                 [INPUT]
                   Name              tail
-                  Path              /var/log/containers/*wamp*.log
-                  Parser            docker
+                  Path              /var/log/containers/*.log
+                  Parser            json_parser
                   Tag               kube.*
-                  Refresh_Interval  5
-                  Skip_Long_Lines   On
-                  DB                /var/log/flb-kube.db
+                  Refresh_Interval  1
+                  Rotate_Wait       5
                   Mem_Buf_Limit     50MB
 
               # Filters - transform and enrich logs
