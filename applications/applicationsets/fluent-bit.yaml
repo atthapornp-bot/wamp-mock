@@ -126,6 +126,7 @@ spec:
                     Rule $TAG ^([^\.]+)\.(wamp-external-api-[a-z0-9]{10}-[a-z0-9]{5})$ $1.wamp-external-api.$2.activity_log false
                     Rule $TAG ^([^\.]+)\.(wamp-job-housekeeping-[a-z0-9]{10}-[a-z0-9]{5})$ $1.wamp-job-housekeeping.$2.activity_log false
                     Rule $TAG ^([^\.]+)\.(wamp-job-occupation-[a-z0-9]{10}-[a-z0-9]{5})$ $1.wamp-job-occupation.$2.activity_log false
+                    Rule $TAG ^([^\.]+)\.(wamp-web-[a-z0-9]{10}-[a-z0-9]{5})$ $1.wamp-web.$2.activity_log false
                     
               # Output plugins - where logs go
               outputs: |
