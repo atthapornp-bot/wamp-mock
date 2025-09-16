@@ -93,11 +93,11 @@ spec:
                     Path              /var/log/containers/*wamp*.log
                     # Use CRI parser since most K8s clusters use containerd/CRI-O
                     Parser            cri
-                    # Tag pattern - extract namespace, app, pod, and container from filename
-                    # Example: /var/log/containers/wamp-api-697fb68ddb-kt56t_wamp-sit_activity-log-123456.log
-                    # Results in tag: wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
+                    # Tag pattern - extract namespace, pod, and container from filename
+                    # Example: /var/log/containers/wamp-api-697fb68ddb-kt56t_wamp-sit_wamp-api-d789ea143ef6186782ec84f0b85a25d6ff0a141c8780383340ede2f4e2f9f07d.log
+                    # Initial tag: wamp-sit.wamp-api-697fb68ddb-kt56t.wamp-api
                     Tag_Regex         (?<pod_name>[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)\.log$
-                    Tag               <namespace_name>.<pod_name>.<container_name>
+                    Tag               <namespace_name>.<pod_name>
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
                     # Refresh interval for discovering new files
@@ -106,7 +106,7 @@ spec:
 
               # Filters - transform and enrich logs
               filters: |
-                # First filter: Parse and rewrite tags to extract app name and log type
+                # First filter: Parse log content
                 [FILTER]
                     Name parser
                     Match *
@@ -114,14 +114,23 @@ spec:
                     Parser json_parser
                     Reserve_Data On
 
-                # Second filter: Rewrite tags to proper format
+                # Second filter: Add log_type field from parsed log
+                [FILTER]
+                    Name modify
+                    Match *
+                    Add log_type activity_log
+
+                # Third filter: Rewrite tags to proper format
                 [FILTER]
                     Name rewrite_tag
                     Match *
-                    # Extract namespace, appName (from pod prefix), podName, and log_type (from container)
-                    # Input: wamp-sit.wamp-api-697fb68ddb-kt56t.activity-log
+                    # Extract namespace, appName (from pod prefix minus last 16 chars), podName, and add log_type
+                    # Input: wamp-sit.wamp-api-697fb68ddb-kt56t
                     # Output: wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
-                    Rule $TAG ^([^.]+)\.([^-]+)-([^.]+)\.(.+)$ $1.$2.$2-$3.$4 false
+                    # Pattern: namespace.pod-name -> namespace.app-name.pod-name.log_type
+                    Rule $TAG ^([^.]+)\.([^-]+-[^-]+-[^-]+)-(.+)$ $1.$2.$2-$3.${log_type} false
+                    Rule $TAG ^([^.]+)\.([^-]+-[^-]+)-(.+)$ $1.$2.$2-$3.${log_type} false
+                    Rule $TAG ^([^.]+)\.([^-]+)-(.+)$ $1.$2.$2-$3.${log_type} false
                     
               # Output plugins - where logs go
               outputs: |
