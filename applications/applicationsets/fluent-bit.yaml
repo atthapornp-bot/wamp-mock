@@ -82,11 +82,18 @@ spec:
                 [INPUT]
                   Name    stdin
                   Tag     log-app
-                  Parser  json_parser
 
               # Filters - transform and enrich logs
               filters: |
-                # First filter: Extract Kubernetes metadata from file paths and container info
+                # Parse JSON logs
+                [FILTER]
+                  Name  parser
+                  Match log-app
+                  Key_Name log
+                  Parser json_parser
+                  Reserve_Data On
+
+                # Extract and rewrite tags based on app name
                 [FILTER]
                   Name  rewrite_tag
                   Match log-app
