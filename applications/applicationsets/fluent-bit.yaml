@@ -95,38 +95,30 @@ spec:
                     Exclude_Path      /var/log/containers/*fluentbit*,/var/log/containers/*fluentd*
                     # Use CRI parser since most K8s clusters use containerd/CRI-O
                     Parser            cri
-                    # Fixed tag for all logs
-                    Tag               kube
+                    # Tag will be dynamically generated from filename
+                    Tag               kube.*
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
                     # Refresh interval for discovering new files
                     Refresh_Interval  1
                     Rotate_Wait       5
-                    # Store path for processing
-                    Path_Key          source
 
               # Filters - transform and enrich logs
               filters: |
-                # First filter: Extract metadata from source path and rewrite tag
-                [FILTER]
-                    Name parser
-                    Match kube
-                    Key_Name source
-                    Parser extract_pod_info
-                    Reserve_Data On
-
-                # Second filter: Rewrite tags based on extracted metadata
+                # First filter: Rewrite tags based on the incoming tag pattern
+                # The tag from tail input with kube.* will be like:
+                # kube.var.log.containers.wamp-api-665c49874b-tf8wk_wamp-sit_wamp-api-xxx.log
                 [FILTER]
                     Name rewrite_tag
-                    Match kube
-                    # Use extracted fields to create proper tag
-                    # pod_name and namespace_name are extracted by the parser
-                    Rule $pod_name ^(wamp-api-.*)$ ${namespace_name}.wamp-api.${pod_name}.activity_log false
-                    Rule $pod_name ^(wamp-crypto-util-.*)$ ${namespace_name}.wamp-crypto-util.${pod_name}.activity_log false
-                    Rule $pod_name ^(wamp-external-api-.*)$ ${namespace_name}.wamp-external-api.${pod_name}.activity_log false
-                    Rule $pod_name ^(wamp-job-housekeeping-.*)$ ${namespace_name}.wamp-job-housekeeping.${pod_name}.activity_log false
-                    Rule $pod_name ^(wamp-job-occupation-.*)$ ${namespace_name}.wamp-job-occupation.${pod_name}.activity_log false
-                    Rule $pod_name ^(wamp-web-.*)$ ${namespace_name}.wamp-web.${pod_name}.activity_log false
+                    Match kube.*
+                    # Extract pod, namespace from the tag and create new tag structure
+                    # Pattern: kube.var.log.containers.POD_NAMESPACE_CONTAINER.log
+                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-api-[^_]+)_([^_]+)_.+\.log$ $2.wamp-api.$1.activity_log false
+                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-crypto-util-[^_]+)_([^_]+)_.+\.log$ $2.wamp-crypto-util.$1.activity_log false
+                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-external-api-[^_]+)_([^_]+)_.+\.log$ $2.wamp-external-api.$1.activity_log false
+                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-job-housekeeping-[^_]+)_([^_]+)_.+\.log$ $2.wamp-job-housekeeping.$1.activity_log false
+                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-job-occupation-[^_]+)_([^_]+)_.+\.log$ $2.wamp-job-occupation.$1.activity_log false
+                    Rule $TAG ^kube\.var\.log\.containers\.(wamp-web-[^_]+)_([^_]+)_.+\.log$ $2.wamp-web.$1.activity_log false
 
                 # Second filter: Parse log content if it's JSON
                 [FILTER]
