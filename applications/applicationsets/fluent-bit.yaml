@@ -92,7 +92,7 @@ spec:
                   Path              /var/log/containers/*wamp*.log
                   Parser            json_parser
                   Tag               kube.*
-                  Refresh_Interval  1
+                  Refresh_Interval  5
                   Rotate_Wait       5
                   Mem_Buf_Limit     50MB
 
