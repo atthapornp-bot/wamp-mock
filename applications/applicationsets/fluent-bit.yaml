@@ -109,7 +109,7 @@ spec:
                 # First filter: Rewrite tags FIRST before parsing
                 [FILTER]
                     Name rewrite_tag
-                    Match wamp*
+                    Match *
                     # Rules for each known app - extract namespace, app name, and full pod name
                     # Input: wamp-sit.wamp-api-665c49874b-tf8wk
                     # Output: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
