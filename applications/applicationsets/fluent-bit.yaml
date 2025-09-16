@@ -164,13 +164,6 @@ spec:
               # Custom parsers for different log formats
               customParsers: |
                 [PARSER]
-                    Name docker_no_time
-                    Format json
-                    Time_Keep Off
-                    Time_Key time
-                    Time_Format %Y-%m-%dT%H:%M:%S.%L
-
-                [PARSER]
                     Name containerd
                     Format regex
                     Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
@@ -188,11 +181,6 @@ spec:
                 [PARSER]
                     Name json_parser
                     Format json
-
-                [PARSER]
-                    Name extract_pod_info
-                    Format regex
-                    Regex ^/var/log/containers/(?<pod_name>[^_]+)_(?<namespace_name>[^_]+)_(?<container_name>[^.]+)\.log$
 
             # Environment variables for configuration
             env:
