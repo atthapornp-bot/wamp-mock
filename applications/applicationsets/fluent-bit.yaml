@@ -61,35 +61,6 @@ spec:
                 # This annotation links to IAM role for S3 access (dev account)
                 eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
             
-            # Lua scripts for processing
-            luaScripts:
-              extract_metadata.lua: |
-                function extract_metadata(tag, timestamp, record)
-                    -- Extract namespace and pod name from tag
-                    -- Tag format: namespace.pod-name
-                    local namespace, pod_name = tag:match("([^.]+)%.(.+)")
-
-                    if namespace and pod_name then
-                        -- Extract app name by removing last 16 characters from pod name
-                        -- Example: wamp-api-665c49874b-tf8wk -> wamp-api
-                        local app_name = pod_name
-                        if #pod_name > 16 then
-                            -- Remove the last 16 characters (deployment hash and replica)
-                            app_name = pod_name:sub(1, #pod_name - 16)
-                            -- Remove trailing dash if exists
-                            app_name = app_name:gsub("%-$", "")
-                        end
-
-                        -- Add metadata to record
-                        record["namespace"] = namespace
-                        record["app_name"] = app_name
-                        record["pod_name"] = pod_name
-                        record["log_type"] = "activity_log"
-                    end
-
-                    return 1, timestamp, record
-                end
-
             # Core FluentBit configuration
             config:
               # Service configuration - defines global behavior
@@ -135,7 +106,7 @@ spec:
 
               # Filters - transform and enrich logs
               filters: |
-                # First filter: Parse log content
+                # First filter: Parse log content if it's JSON
                 [FILTER]
                     Name parser
                     Match *
@@ -143,20 +114,15 @@ spec:
                     Parser json_parser
                     Reserve_Data On
 
-                # Second filter: Extract metadata using Lua script
-                [FILTER]
-                    Name lua
-                    Match *
-                    script extract_metadata.lua
-                    call extract_metadata
-
-                # Third filter: Rewrite tags to proper format
+                # Second filter: Rewrite tags to extract app name from pod name
                 [FILTER]
                     Name rewrite_tag
                     Match *
-                    # Use the extracted metadata to create proper tag structure
-                    # Output: namespace.app_name.pod_name.log_type
-                    Rule $TAG .* ${namespace}.${app_name}.${pod_name}.${log_type} false
+                    # Extract namespace and pod name, then derive app name by removing last 16 chars
+                    # Input tag: wamp-sit.wamp-api-665c49874b-tf8wk
+                    # Output tag: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
+                    # Pattern: namespace.podname where podname = appname-16chars
+                    Rule $TAG ^([^.]+)\.(.+)-([a-z0-9]{16})$ $1.$2.$2-$3.activity_log false
                     
               # Output plugins - where logs go
               outputs: |
