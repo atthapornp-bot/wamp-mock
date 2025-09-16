@@ -74,7 +74,7 @@ spec:
                 [SERVICE]
                   Flush         1
                   Parsers_File  /fluent-bit/etc/parsers.conf
-                  Parsers_File  /fluent-bit/etc/custom_parsers.conf
+                  Parsers_File  /fluent-bit/etc/conf/custom_parsers.conf
                   Hot_Reload    On
 
               # Input plugins - where logs come from
