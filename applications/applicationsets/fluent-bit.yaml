@@ -66,76 +66,96 @@ spec:
               # Service configuration - defines global behavior
               service: |
                 [SERVICE]
-                  # Daemon Off means FluentBit runs as a DaemonSet
-                  Daemon Off
-                  # Flush interval - how often to send logs (in seconds)
-                  Flush 5
-                  # Set the logging level for Fluent Bit itself
-                  Log_Level info
-                  # HTTP server for health checks and metrics
-                  HTTP_Server On
-                  HTTP_Listen 0.0.0.0
-                  HTTP_Port 2020
-                  # Storage settings for buffering
-                  storage.path  /var/log/flb-storage/
-                  storage.sync  normal
-                  storage.checksum off
-                  storage.backlog.mem_limit 50M
-                  Parsers_File  /fluent-bit/etc/parsers.conf
-                  Parsers_File  /fluent-bit/etc/conf/custom_parsers.conf
-                  Hot_Reload    On
+                    # Daemon Off means FluentBit runs as a DaemonSet
+                    Daemon Off
+                    # Flush interval - how often to send logs (in seconds)
+                    Flush 5
+                    # Set the logging level for Fluent Bit itself
+                    Log_Level info
+                    # HTTP server for health checks and metrics
+                    HTTP_Server On
+                    HTTP_Listen 0.0.0.0
+                    HTTP_Port 2020
+                    # Storage settings for buffering
+                    storage.path  /var/log/flb-storage/
+                    storage.sync  normal
+                    storage.checksum off
+                    storage.backlog.mem_limit 50M
+                    Parsers_File /fluent-bit/etc/parser.conf
+                    Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
 
               # Input plugins - where logs come from
               inputs: |
                 [INPUT]
-                  Name              tail
-                  Path              /var/log/containers/*wamp*.log
-                  Parser            docker
-                  Tag_Regex         (?<pod>[^_]+)_(?<namespace>[^_]+)_(?<container>[^-]+)
-                  Tag               $namespace.$pod
-                  Refresh_Interval  5
-                  Rotate_Wait       5
-                  Mem_Buf_Limit     50MB
+                    # Use the tail input plugin to read container logs
+                    Name              tail
+                    # Path where Kubernetes stores container logs
+                    Path              /var/log/containers/*.log
+                    # Use CRI parser since most K8s clusters use containerd/CRI-O
+                    Parser            json_parser
+                    # Tag pattern - this creates structured tags for filtering
+                    Tag               wamp-app
+                    # Memory buffer limit per file
+                    Mem_Buf_Limit     50MB
+                    # Refresh interval for discovering new files
+                    Refresh_Interval  1
+                    Rotate_Wait       5
 
               # Filters - transform and enrich logs
               filters: |
-                # Parse JSON logs if needed
+                # First filter: Extract Kubernetes metadata from file paths and container info
                 [FILTER]
-                  Name         parser
-                  Match        *
-                  Key_Name     log
-                  Parser       json_parser
-                  Reserve_Data On
-
+                    Name rewrite_tag
+                    Match wamp-app
+                    rule $appName ^(?!wamp-api$|wamp-crypto-util$|wamp-external-api$|wamp-job-housekeeping$|wamp-job-occupation$)* $appName.$hostname.$log_type false
+                    
               # Output plugins - where logs go
               outputs: |
                 [OUTPUT]
-                    Name              s3
-                    Match             wamp-*.*    # Matches namespace.pod pattern
-                    bucket            wamp-nonprod-s3
-                    region            ap-southeast-1
-                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/%{index}.log
+                    Name s3
+                    Match wamp*
+                    bucket wamp-nonprod-s3
+                    region ${AWS_REGION}
+                    s3_key_format     /kubernetes-logs/${WAMP_NAMESPACE}/$TAG[0]/year=%Y/month=%m/day=%d/hour=%H/$TAG[1]/$TAG[1]-$TAG[2]-%Y%m%d-%H%M%S.log
                     s3_key_format_tag_delimiters .
-                    content_type      application/json
-                    total_file_size   10M
-                    use_put_object    On
+                    content_type      text/plain
+                    total_file_size    10M
+                    upload_timeout     1m
+                    use_put_object     On
+                    storage_class STANDARD_IA
 
                 [OUTPUT]
                     Name loki
-                    Match wamp-*.*
+                    Match wamp*
                     # Loki endpoint configuration
                     uri http://loki.loki:3100/loki/api/v1/push
                     # Labels for log streams - Loki uses labels for indexing
-                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$TAG[0],pod=$TAG[1]
+                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
                     # Remove metadata to reduce log size
-                    remove_keys stream,time
+                    remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
+                    # Auto kubernetes labels - adds all k8s labels as Loki labels
+                    auto_kubernetes_labels on
                     # Tenant ID for multi-tenant Loki setups
                     tenant_id wamp
                     # Line format - how to format the log line
                     line_format json
-
+              
               # Custom parsers for different log formats
               customParsers: |
+                [PARSER]
+                    Name docker_no_time
+                    Format json
+                    Time_Keep Off
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L
+                    
+                [PARSER]
+                    Name containerd
+                    Format regex
+                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
                 [PARSER]
                     Name json_parser
                     Format json
