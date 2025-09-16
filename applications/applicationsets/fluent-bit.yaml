@@ -61,12 +61,6 @@ spec:
                 # This annotation links to IAM role for S3 access (dev account)
                 eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
             
-            # Custom parsers for different log formats
-            customParsers: |
-              [PARSER]
-                  Name json_parser
-                  Format json
-
             # Core FluentBit configuration
             config:
               # Service configuration - defines global behavior
@@ -74,7 +68,6 @@ spec:
                 [SERVICE]
                   Flush         1
                   Parsers_File  /fluent-bit/etc/parsers.conf
-                  Parsers_File  /fluent-bit/etc/conf/custom_parsers.conf
                   Hot_Reload    On
 
               # Input plugins - where logs come from
@@ -85,12 +78,12 @@ spec:
 
               # Filters - transform and enrich logs
               filters: |
-                # Parse JSON logs
+                # Parse JSON logs using built-in json parser
                 [FILTER]
                   Name  parser
                   Match log-app
                   Key_Name log
-                  Parser json_parser
+                  Parser json
                   Reserve_Data On
 
                 # Extract and rewrite tags based on app name
