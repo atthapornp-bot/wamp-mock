@@ -98,11 +98,11 @@ spec:
                   K8S-Logging.Parser  On
                   K8S-Logging.Exclude On
 
-                # Rewrite tags for routing (format: wamp.appName.podName.logType)
+                # Rewrite tags for routing (format: wamp.namespace.appName.podName.logType)
                 [FILTER]
                   Name  rewrite_tag
                   Match kube.*
-                  Rule  $kubernetes['labels']['app'] ^(wamp-api|wamp-crypto-util|wamp-external-api|wamp-job-housekeeping|wamp-job-occupation)$ wamp.$kubernetes['labels']['app'].$kubernetes['pod_name'].activity_log false
+                  Rule  $kubernetes['labels']['app'] ^(wamp-api|wamp-crypto-util|wamp-external-api|wamp-job-housekeeping|wamp-job-occupation)$ wamp.$kubernetes['namespace_name'].$kubernetes['labels']['app'].$kubernetes['pod_name'].activity_log false
 
               # Output plugins - where logs go
               outputs: |
@@ -111,7 +111,8 @@ spec:
                     Match wamp*
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
-                    s3_key_format     /kubernetes-logs/${WAMP_NAMESPACE}/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S.log
+                    s3_key_format     /kubernetes-logs/$TAG[1]/$TAG[2]/year=%Y/month=%m/day=%d/hour=%H/$TAG[3]/$TAG[3]-$TAG[4]-%Y%m%d-%H%M%S.log
+                    s3_key_format_tag_delimiters .
                     content_type      text/plain
                     total_file_size    10M
                     use_put_object     On
