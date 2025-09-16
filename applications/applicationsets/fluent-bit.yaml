@@ -89,7 +89,7 @@ spec:
               inputs: |
                 [INPUT]
                   Name              tail
-                  Path              /var/log/containers/*.log
+                  Path              /var/log/containers/*wamp*.log
                   Parser            json_parser
                   Tag               kube.*
                   Refresh_Interval  1
