@@ -159,8 +159,6 @@ spec:
                 allow-snippet-annotations: "true"
                 proxy-add-original-uri-header: "true"
                 annotations-risk-level: "Critical"
-                use-forwarded-headers: "true"
-                forwarded-for-header: "CF-Connection-IP" # For Cloudflare Tunnel/Proxy
 
               # https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network
               dnsPolicy: ClusterFirst
