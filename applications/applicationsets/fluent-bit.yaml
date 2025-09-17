@@ -113,7 +113,9 @@ spec:
                     # Rules for each known app - extract namespace, app name, and full pod name
                     # Input: wamp-sit.wamp-api-665c49874b-tf8wk
                     # Output: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
-                    Rule $TAG ^([^.]+)\.((wamp-(?:api|crypto-util|external-api|job-(?:housekeeping|occupation)|web))-[^.]+)$ $1.$3.$2.activity_log false
+                    Rule $TAG ^([^.]+)\.(wamp-[a-z-]+)(-[a-z0-9]+-[a-z0-9]+)$ $1.$2.$2$3.activity_log false
+                    # Fallback for unmatched
+                    Rule $TAG ^(.*)$ $1.unmatched.activity_log false
 
                 # Second filter: Parse log content if it's JSON
                 [FILTER]
