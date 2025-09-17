@@ -114,12 +114,12 @@ spec:
                     # Input: wamp-sit.wamp-api-665c49874b-tf8wk
                     # Output: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
                     # Generic rule that dynamically extracts the app name
-                    Rule $TAG ^([^.]+)\.(wamp-api)(-[a-z0-9]+-[a-z0-9]+)$ $1.$2.$2$3.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-crypto-util)(-[a-z0-9]+-[a-z0-9]+)$ $1.$2.$2$3.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-external-api)(-[a-z0-9]+-[a-z0-9]+)$ $1.$2.$2$3.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-job-housekeeping)(-[a-z0-9]+-[a-z0-9]+)$ $1.$2.$2$3.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-job-occupation)(-[a-z0-9]+-[a-z0-9]+)$ $1.$2.$2$3.activity_log false
-                    Rule $TAG ^([^.]+)\.(wamp-web)(-[a-z0-9]+-[a-z0-9]+)$ $1.$2.$2$3.activity_log false
+                    Rule $TAG ^([^.]+)\.(wamp-api)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-api.$2$3.activity_log false
+                    Rule $TAG ^([^.]+)\.(wamp-crypto-util)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-crypto-util.$2$3.activity_log false
+                    Rule $TAG ^([^.]+)\.(wamp-external-api)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-external-api.$2$3.activity_log false
+                    Rule $TAG ^([^.]+)\.(wamp-job-housekeeping)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-job-housekeeping.$2$3.activity_log false
+                    Rule $TAG ^([^.]+)\.(wamp-job-occupation)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-job-occupation.$2$3.activity_log false
+                    Rule $TAG ^([^.]+)\.(wamp-web)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-web.$2$3.activity_log false
                     # Fallback rule for any unmatched tags (optional but recommended)
                     Rule $TAG ^(.*)$ $1.unmatched.activity_log false
 
