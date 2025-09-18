@@ -1,0 +1,284 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: fluent-bit
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  generators:
+    - list:
+        elements:
+          - name: local
+            server: https://kubernetes.default.svc
+            clusterName: wamp-nonprod
+            awsRegion: ap-southeast-1
+
+  template:
+    metadata:
+      name: "{{name}}-fluent-bit"
+
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+
+      project: cluster-ops
+
+      destination:
+        namespace: logging
+        server: "{{server}}"
+
+      source:
+        repoURL: https://fluent.github.io/helm-charts
+        chart: fluent-bit
+        targetRevision: "0.50.0"
+        helm:
+          releaseName: fluent-bit
+          values: |
+            kind: DaemonSet
+
+            resources:
+              limits:
+                cpu: 200m
+                memory: 200Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+
+            serviceAccount:
+              create: true
+              annotations:
+                eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
+
+            config:
+              service: |
+                [SERVICE]
+                    Daemon Off
+                    Flush 5
+                    Log_Level info
+                    HTTP_Server On
+                    HTTP_Listen 0.0.0.0
+                    HTTP_Port 2020
+                    storage.path  /var/log/flb-storage/
+                    storage.sync  normal
+                    storage.checksum off
+                    storage.backlog.mem_limit 50M
+                    Parsers_File /fluent-bit/etc/parser.conf
+                    Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
+
+              inputs: |
+                [INPUT]
+                    Name              tail
+                    Path              /var/log/containers/*wamp*.log
+                    Parser            cri
+                    Tag_Regex         (?<pod_name>[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)\.log$
+                    Tag               <namespace_name>.<pod_name>
+                    Mem_Buf_Limit     50MB
+                    Refresh_Interval  1
+                    Rotate_Wait       5
+
+              filters: |
+                # Add kubernetes metadata first
+                [FILTER]
+                    Name kubernetes
+                    Match *
+                    Kube_URL https://kubernetes.default.svc:443
+                    Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                    Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
+                    Merge_Log On
+                    K8S-Logging.Parser On
+                    K8S-Logging.Exclude Off
+                    Buffer_Size 256k
+
+                # Add fields that we'll use for tag rewriting
+                [FILTER]
+                    Name record_modifier
+                    Match *
+                    Record original_tag ${TAG}
+
+                # Rewrite tags using the actual $TAG value
+                # $TAG format: namespace.pod-name (e.g., wamp-sit.wamp-api-665c49874b-tf8wk)
+                [FILTER]
+                    Name rewrite_tag
+                    Match *
+                    Emitter_Name re_emitted
+                    Emitter_Storage.type filesystem
+                    Emitter_Mem_Buf_Limit 10M
+
+                    # Rules match against the ENTIRE TAG value
+                    # Pattern matching: $TAG (the whole tag) against regex, then construct new tag
+
+                    # For wamp-api pods
+                    # Input tag: wamp-sit.wamp-api-665c49874b-tf8wk
+                    # Output tag: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
+                    Rule $TAG ^(wamp-[^\.]+)\.(wamp-api-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-api.$2.activity_log false
+
+                    # For wamp-crypto-util pods
+                    Rule $TAG ^(wamp-[^\.]+)\.(wamp-crypto-util-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-crypto-util.$2.activity_log false
+
+                    # For wamp-external-api pods
+                    Rule $TAG ^(wamp-[^\.]+)\.(wamp-external-api-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-external-api.$2.activity_log false
+
+                    # For wamp-job-housekeeping pods
+                    Rule $TAG ^(wamp-[^\.]+)\.(wamp-job-housekeeping-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-job-housekeeping.$2.activity_log false
+
+                    # For wamp-job-occupation pods
+                    Rule $TAG ^(wamp-[^\.]+)\.(wamp-job-occupation-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-job-occupation.$2.activity_log false
+
+                    # For wamp-web pods
+                    Rule $TAG ^(wamp-[^\.]+)\.(wamp-web-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-web.$2.activity_log false
+
+                    # Catch-all for any other wamp pods
+                    Rule $TAG ^(wamp-[^\.]+)\.(.+)$ $1.wamp-app.$2.activity_log false
+
+                # Parse JSON logs
+                [FILTER]
+                    Name parser
+                    Match *.activity_log
+                    Key_Name log
+                    Parser json_parser
+                    Reserve_Data On
+
+              outputs: |
+                # S3 output - match rewritten tags ending with .activity_log
+                [OUTPUT]
+                    Name s3
+                    Match *.*.*.activity_log
+                    bucket wamp-nonprod-s3
+                    region ${AWS_REGION}
+                    # Tag format: namespace.app.pod.log_type
+                    # Example: wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
+                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S.log
+                    s3_key_format_tag_delimiters .
+                    content_type      text/plain
+                    total_file_size    10M
+                    upload_timeout     1m
+                    use_put_object     On
+                    static_file_path   true
+
+                # Loki output
+                [OUTPUT]
+                    Name loki
+                    Match *.*.*.activity_log
+                    uri http://loki.loki:3100/loki/api/v1/push
+                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
+                    remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash,original_tag
+                    auto_kubernetes_labels on
+                    tenant_id wamp
+                    line_format json
+
+                # Fallback S3 output for unmatched wamp-app logs
+                [OUTPUT]
+                    Name s3
+                    Match *.wamp-app.*.activity_log
+                    bucket wamp-nonprod-s3
+                    region ${AWS_REGION}
+                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S.log
+                    s3_key_format_tag_delimiters .
+                    content_type      text/plain
+                    total_file_size    10M
+                    upload_timeout     1m
+                    use_put_object     On
+                    static_file_path   true
+
+              customParsers: |
+                [PARSER]
+                    Name docker_no_time
+                    Format json
+                    Time_Keep Off
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L
+
+                [PARSER]
+                    Name containerd
+                    Format regex
+                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+                [PARSER]
+                    Name cri
+                    Format regex
+                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+                    Decode_Field_As json log
+
+                [PARSER]
+                    Name json_parser
+                    Format json
+
+            env:
+              - name: CLUSTER_NAME
+                value: "wamp-nonprod"
+              - name: AWS_REGION
+                value: "ap-southeast-1"
+              - name: WAMP_NAMESPACE
+                value: wamp-sit
+              - name: AWS_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_ACCESS_KEY_ID
+              - name: AWS_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_SECRET_ACCESS_KEY
+
+            tolerations:
+              - operator: Exists
+                effect: NoSchedule
+              - operator: Exists
+                effect: PreferNoSchedule
+              - operator: Exists
+                effect: NoExecute
+
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                          - linux
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 3
+                    preference:
+                      matchExpressions:
+                        - key: project
+                          operator: In
+                          values:
+                            - cluster-ops
+                  - weight: 2
+                    preference:
+                      matchExpressions:
+                        - key: environment
+                          operator: In
+                          values:
+                            - critical
+                  - weight: 1
+                    preference:
+                      matchExpressions:
+                        - key: eks.amazonaws.com/capacityType
+                          operator: In
+                          values:
+                            - ON_DEMAND
+
+            metrics:
+              serviceMonitor:
+                enabled: false
+                namespace: kube-prometheus-stack
+              dashboards:
+                create: false
+                namespace: kube-prometheus-stack
+                labels:
+                  grafana_dashboard: 1

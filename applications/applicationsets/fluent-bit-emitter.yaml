@@ -1,0 +1,264 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: fluent-bit
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  generators:
+    - list:
+        elements:
+          - name: local
+            server: https://kubernetes.default.svc
+            clusterName: wamp-nonprod
+            awsRegion: ap-southeast-1
+
+  template:
+    metadata:
+      name: "{{name}}-fluent-bit"
+
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+
+      project: cluster-ops
+
+      destination:
+        namespace: logging
+        server: "{{server}}"
+
+      source:
+        repoURL: https://fluent.github.io/helm-charts
+        chart: fluent-bit
+        targetRevision: "0.50.0"
+        helm:
+          releaseName: fluent-bit
+          values: |
+            kind: DaemonSet
+
+            resources:
+              limits:
+                cpu: 200m
+                memory: 200Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+
+            serviceAccount:
+              create: true
+              annotations:
+                eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
+
+            config:
+              service: |
+                [SERVICE]
+                    Daemon Off
+                    Flush 5
+                    Log_Level info
+                    HTTP_Server On
+                    HTTP_Listen 0.0.0.0
+                    HTTP_Port 2020
+                    storage.path  /var/log/flb-storage/
+                    storage.sync  normal
+                    storage.checksum off
+                    storage.backlog.mem_limit 50M
+                    Parsers_File /fluent-bit/etc/parser.conf
+                    Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
+
+              inputs: |
+                [INPUT]
+                    Name              tail
+                    Path              /var/log/containers/*wamp*.log
+                    Parser            cri
+                    Tag_Regex         (?<pod_name>[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)\.log$
+                    # Keep original tag format for now
+                    Tag               <namespace_name>.<pod_name>
+                    Mem_Buf_Limit     50MB
+                    Refresh_Interval  1
+                    Rotate_Wait       5
+
+              filters: |
+                # Use rewrite_tag with Emitter_Name for proper re-emission
+                [FILTER]
+                    Name rewrite_tag
+                    Match wamp-*.*
+                    # Use Emitter_Name to properly re-emit the records
+                    Emitter_Name re_emitted
+                    Emitter_Storage.type filesystem
+                    Emitter_Mem_Buf_Limit 10M
+
+                    # Extract app name from pod name and restructure tag
+                    # Input: wamp-sit.wamp-api-665c49874b-tf8wk
+                    # Output: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
+
+                    # Match pattern: namespace.podname where podname starts with app name
+                    Rule $TAG ^(wamp-[^.]+)\.(wamp-api)-([^.]+)$ $1.$2.$2-$3.activity_log false
+                    Rule $TAG ^(wamp-[^.]+)\.(wamp-crypto-util)-([^.]+)$ $1.$2.$2-$3.activity_log false
+                    Rule $TAG ^(wamp-[^.]+)\.(wamp-external-api)-([^.]+)$ $1.$2.$2-$3.activity_log false
+                    Rule $TAG ^(wamp-[^.]+)\.(wamp-job-housekeeping)-([^.]+)$ $1.$2.$2-$3.activity_log false
+                    Rule $TAG ^(wamp-[^.]+)\.(wamp-job-occupation)-([^.]+)$ $1.$2.$2-$3.activity_log false
+                    Rule $TAG ^(wamp-[^.]+)\.(wamp-web)-([^.]+)$ $1.$2.$2-$3.activity_log false
+
+                    # Generic fallback for any wamp pods not matching above
+                    Rule $TAG ^(wamp-[^.]+)\.([^.]+)$ $1.wamp-app.$2.activity_log false
+
+                # Parse JSON logs on the rewritten tags
+                [FILTER]
+                    Name parser
+                    Match wamp-*.*.*.activity_log
+                    Key_Name log
+                    Parser json_parser
+                    Reserve_Data On
+
+                # Also parse unmatched logs
+                [FILTER]
+                    Name parser
+                    Match wamp-*.wamp-app.*.activity_log
+                    Key_Name log
+                    Parser json_parser
+                    Reserve_Data On
+
+              outputs: |
+                # S3 output - match the rewritten tags
+                [OUTPUT]
+                    Name s3
+                    Match wamp-*.*.*.activity_log
+                    bucket wamp-nonprod-s3
+                    region ${AWS_REGION}
+                    # Tag format now: namespace.app.pod.log_type
+                    # Example: wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
+                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S.log
+                    s3_key_format_tag_delimiters .
+                    content_type      text/plain
+                    total_file_size    10M
+                    upload_timeout     1m
+                    use_put_object     On
+                    static_file_path   true
+
+                # Loki output
+                [OUTPUT]
+                    Name loki
+                    Match wamp-*.*.*.activity_log
+                    uri http://loki.loki:3100/loki/api/v1/push
+                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
+                    remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
+                    auto_kubernetes_labels on
+                    tenant_id wamp
+                    line_format json
+
+                # Also handle unmatched logs
+                [OUTPUT]
+                    Name s3
+                    Match wamp-*.wamp-app.*.activity_log
+                    bucket wamp-nonprod-s3
+                    region ${AWS_REGION}
+                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S.log
+                    s3_key_format_tag_delimiters .
+                    content_type      text/plain
+                    total_file_size    10M
+                    upload_timeout     1m
+                    use_put_object     On
+                    static_file_path   true
+
+              customParsers: |
+                [PARSER]
+                    Name docker_no_time
+                    Format json
+                    Time_Keep Off
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L
+
+                [PARSER]
+                    Name containerd
+                    Format regex
+                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+                [PARSER]
+                    Name cri
+                    Format regex
+                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+                    Decode_Field_As json log
+
+                [PARSER]
+                    Name json_parser
+                    Format json
+
+            env:
+              - name: CLUSTER_NAME
+                value: "wamp-nonprod"
+              - name: AWS_REGION
+                value: "ap-southeast-1"
+              - name: WAMP_NAMESPACE
+                value: wamp-sit
+              - name: AWS_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_ACCESS_KEY_ID
+              - name: AWS_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_SECRET_ACCESS_KEY
+
+            tolerations:
+              - operator: Exists
+                effect: NoSchedule
+              - operator: Exists
+                effect: PreferNoSchedule
+              - operator: Exists
+                effect: NoExecute
+
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                          - linux
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 3
+                    preference:
+                      matchExpressions:
+                        - key: project
+                          operator: In
+                          values:
+                            - cluster-ops
+                  - weight: 2
+                    preference:
+                      matchExpressions:
+                        - key: environment
+                          operator: In
+                          values:
+                            - critical
+                  - weight: 1
+                    preference:
+                      matchExpressions:
+                        - key: eks.amazonaws.com/capacityType
+                          operator: In
+                          values:
+                            - ON_DEMAND
+
+            metrics:
+              serviceMonitor:
+                enabled: false
+                namespace: kube-prometheus-stack
+              dashboards:
+                create: false
+                namespace: kube-prometheus-stack
+                labels:
+                  grafana_dashboard: 1

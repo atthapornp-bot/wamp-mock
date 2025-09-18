@@ -81,6 +81,7 @@ spec:
                     storage.sync  normal
                     storage.checksum off
                     storage.backlog.mem_limit 50M
+                    Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
 
               # Input plugins - where logs come from
               inputs: |
