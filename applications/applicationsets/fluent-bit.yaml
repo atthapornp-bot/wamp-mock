@@ -111,6 +111,9 @@ spec:
                 [FILTER]
                     Name rewrite_tag
                     Match raw.*
+                    Emitter_Name re_emitted
+                    Emitter_Storage.type filesystem
+                    Emitter_Mem_Buf_Limit 10M
                     # Extract namespace, app name from pod name, and add log type
                     # Input: raw.wamp-sit.wamp-api-665c49874b-tf8wk
                     # Output: logs.wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
