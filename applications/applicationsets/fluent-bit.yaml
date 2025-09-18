@@ -97,7 +97,8 @@ spec:
                     # Example: /var/log/containers/wamp-api-697fb68ddb-kt56t_wamp-sit_wamp-api-d789ea143ef6186782ec84f0b85a25d6ff0a141c8780383340ede2f4e2f9f07d.log
                     # Initial tag: wamp-sit.wamp-api-697fb68ddb-kt56t.wamp-api
                     Tag_Regex         (?<pod_name>[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*)_(?<namespace_name>[^_]+)_(?<container_name>.+)\.log$
-                    Tag               <namespace_name>.<pod_name>
+                    # IMPORTANT: Use a tag that won't match output filters directly
+                    Tag               raw.<namespace_name>.<pod_name>
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
                     # Refresh interval for discovering new files
@@ -106,41 +107,43 @@ spec:
 
               # Filters - transform and enrich logs
               filters: |
-                # First filter: Rewrite tags FIRST before parsing
+                # First filter: Rewrite tags to structured format
                 [FILTER]
                     Name rewrite_tag
-                    Match *
-                    # Rules for each known app - extract namespace, app name, and full pod name
-                    # Input: wamp-sit.wamp-api-665c49874b-tf8wk
-                    # Output: wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
-                    # Generic rule that dynamically extracts the app name
-                    Rule $TAG ^([^.]+)\.(wamp-api)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-api.$2$3.activity_log true
-                    Rule $TAG ^([^.]+)\.(wamp-crypto-util)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-crypto-util.$2$3.activity_log true
-                    Rule $TAG ^([^.]+)\.(wamp-external-api)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-external-api.$2$3.activity_log true
-                    Rule $TAG ^([^.]+)\.(wamp-job-housekeeping)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-job-housekeeping.$2$3.activity_log true
-                    Rule $TAG ^([^.]+)\.(wamp-job-occupation)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-job-occupation.$2$3.activity_log true
-                    Rule $TAG ^([^.]+)\.(wamp-web)(-[a-z0-9]+-[a-z0-9]+)$ $1.wamp-web.$2$3.activity_log true
-                    # Fallback rule for any unmatched tags (optional but recommended)
-                    Rule $TAG ^(.*)$ $1.wamp-app.unmatched.activity_log true
+                    Match raw.*
+                    # Extract namespace, app name from pod name, and add log type
+                    # Input: raw.wamp-sit.wamp-api-665c49874b-tf8wk
+                    # Output: logs.wamp-sit.wamp-api.wamp-api-665c49874b-tf8wk.activity_log
+                    Rule $TAG ^raw\.([^.]+)\.(wamp-api-[a-z0-9]+-[a-z0-9]+)$ logs.$1.wamp-api.$2.activity_log false
+                    Rule $TAG ^raw\.([^.]+)\.(wamp-crypto-util-[a-z0-9]+-[a-z0-9]+)$ logs.$1.wamp-crypto-util.$2.activity_log false
+                    Rule $TAG ^raw\.([^.]+)\.(wamp-external-api-[a-z0-9]+-[a-z0-9]+)$ logs.$1.wamp-external-api.$2.activity_log false
+                    Rule $TAG ^raw\.([^.]+)\.(wamp-job-housekeeping-[a-z0-9]+-[a-z0-9]+)$ logs.$1.wamp-job-housekeeping.$2.activity_log false
+                    Rule $TAG ^raw\.([^.]+)\.(wamp-job-occupation-[a-z0-9]+-[a-z0-9]+)$ logs.$1.wamp-job-occupation.$2.activity_log false
+                    Rule $TAG ^raw\.([^.]+)\.(wamp-web-[a-z0-9]+-[a-z0-9]+)$ logs.$1.wamp-web.$2.activity_log false
+                    # Fallback rule for unmatched tags
+                    Rule $TAG ^raw\.(.*)$ logs.$1.wamp-app.unmatched.activity_log false
 
                 # Second filter: Parse log content if it's JSON
                 [FILTER]
                     Name parser
-                    Match *
+                    Match logs.*
                     Key_Name log
                     Parser json_parser
                     Reserve_Data On
-                    
+
               # Output plugins - where logs go
               outputs: |
+                # S3 output - only process rewritten logs
                 [OUTPUT]
                     Name s3
-                    Match wamp*
+                    Match logs.*
                     bucket wamp-nonprod-s3
                     region ${AWS_REGION}
-                    # S3 key format: /kubernetes-logs/namespace/appName/year=YYYY/month=MM/day=DD/hour=HH/podName/podName-logType-YYYYMMDD-HHMMSS.log
-                    # Example: /kubernetes-logs/wamp-sit/wamp-api/year=2025/month=09/day=12/hour=03/wamp-api-697fb68ddb-kt56t/wamp-api-697fb68ddb-kt56t-activity_log-20250912-032609.log
-                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-$TAG[3]-%Y%m%d-%H%M%S.log
+                    # S3 key format with proper tag structure
+                    # Tag format: logs.namespace.app.pod.log_type
+                    # Example: logs.wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
+                    # Result: /kubernetes-logs/wamp-sit/wamp-api/year=2025/month=09/day=12/hour=03/wamp-api-697fb68ddb-kt56t/wamp-api-697fb68ddb-kt56t-activity_log-20250912-032609.log
+                    s3_key_format     /kubernetes-logs/$TAG[1]/$TAG[2]/year=%Y/month=%m/day=%d/hour=%H/$TAG[3]/$TAG[3]-$TAG[4]-%Y%m%d-%H%M%S.log
                     s3_key_format_tag_delimiters .
                     content_type      text/plain
                     total_file_size    10M
