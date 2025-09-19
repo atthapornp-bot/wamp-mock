@@ -49,6 +49,7 @@ spec:
           - "apisix_system_api_client_kx_uat"
           - "apisix_system_api_client_dataservice_uat"
           - "apisix_system_api_client_oapi_uat"
+          - "apisix_system_api_client_itsec_uat"
 
     # Key authentication (default priority: 1000)
     - name: key-auth
