@@ -1,7 +1,7 @@
 apiVersion: apisix.apache.org/v2
 kind: ApisixConsumer
 metadata:
-  name: api-client-dataservice-uat
+  name: api-client-itsec-uat
   namespace: apisix-system
 spec:
   # Configure API key authentication for this consumer
