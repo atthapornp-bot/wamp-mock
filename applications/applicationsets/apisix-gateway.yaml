@@ -126,6 +126,9 @@ spec:
             # This is where APISIX stores its routing rules and plugin configurations
             etcd:
               enabled: true
+              image:
+                registry: docker.io
+                repository: bitnamilegacy/etcd
               replicaCount: 3
               auth:
                 rbac:
