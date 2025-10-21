@@ -1,0 +1,18 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: api-client-mtl-uat-key
+  namespace: apisix-system
+spec:
+  encryptedData:
+    key: AgBAswLljs2IArma97ZTc4eYWbOC2Rk4gXNd96SHqEn07B9iPZeMv8de++cCJ7z5CPl87yV+HC0/SXWeD5WToF/bYnYxunCbxvzdt7fqu2OMLkL5Vi08yPSt5ybujqcox+Tf0CuXIkfXOPSfn0gofPboLxGRHJZYuOj+22U759dpVMWg+5HQz3J0xeCe5xT6e247+MsugQJTvdrevPii8/n0Eu/rCASbB+EF2ymmvxuMw9RiEzTGa5p6Sf06WW2iewNdcB24w47fWHtkSSA4giuAoGEWm/vFGMzx2UJo2jSRABuQUSZxxthl9QuC7NnYE61gkmqI0cFeRg0LDnUdOnuxiHiJQt+Aqy97+mQenzAB1l8CzuOao+NDp2t+9IGFRpuFsfRSOxWZonS0M9osh67kc5xUp5X3dFVN3FGGA413xT+Fen+6Jsm5+K5uEYTmUKxsxvUu9lPvXqo9Copn1cbhX5AS1aZp3ZpKaZlwBbU1hSq/EQnqLuEmLqvI/CDld42IcjUtdpLcsEZSnx5493TgGQj1rcwe/N/6IEFaxmD+g4Gv9R/5p0vJKnPWahcXD9za3rd+IfLuk9U3WHcmcDjq7fgBLaEFwDw0YEG7PNbDwuYbESn+HfaM+1xvPoIMtjZ2yFk16K11wvmuTShg4L0Pk8z4ViV5tl1kXdo2pWBH/tTtlBapLFVRLPqJ/HfW37dolCHlfCpU+a4tY1aqrcVfllEquHvvekC7CYYPdBLQLg==
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/part-of: apisix-system
+      name: api-client-mtl-uat-key
+      namespace: apisix-system
+    type: Opaque
