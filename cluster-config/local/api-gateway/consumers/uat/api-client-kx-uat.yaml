@@ -7,8 +7,6 @@ spec:
   # Configure API key authentication for this consumer
   authParameter:
     keyAuth:
-      value:
-        # The API key that this consumer will use
-        # In production, you'd want to generate a secure random key
-        key: "j4TjyCqCQ56mCrwwgOc7zS7xQRXhFuH"
+      secretRef:
+        name: api-client-kx-uat-key
   
