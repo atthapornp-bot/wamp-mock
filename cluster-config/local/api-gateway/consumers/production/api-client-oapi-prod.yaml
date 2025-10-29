@@ -1,12 +1,12 @@
 apiVersion: apisix.apache.org/v2
 kind: ApisixConsumer
 metadata:
-  name: api-client-mtl-sit
+  name: api-client-oapi-prod
   namespace: apisix-system
 spec:
   # Configure API key authentication for this consumer
   authParameter:
     keyAuth:
       secretRef:
-        name: api-client-mtl-sit-key
-   
+        name: api-client-oapi-prod-key
+  

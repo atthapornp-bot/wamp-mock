@@ -1,37 +1,34 @@
 apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
 metadata:
-  name: external-api
-  namespace: wamp-uat
+  name: crypto-util
+  namespace: wamp-production
 spec:
   # Define the HTTP rules for this route
   http:
-    - name: external-api-uat
+    - name: crypto-util-prod
       # Match requests to this path pattern
       match:
         hosts:
-          - "wamp-gw-nonprod.muangthai.co.th"
-          - "oapi-uat.dev.muangthai.co.th"
+          - "wamp-gw.muangthai.co.th"
         paths:
-          - /api/v1/external/confirm-quotation
-          - /api/v1/external/get-quotation
-          - /api/v1/external/reference-code
+          - /api/v1/crypto
+          - /api/v1/crypto/*
         methods:
           - POST
-          
 
       # Where to send authenticated requests
       backends:
-        - serviceName: wamp-external-api
+        - serviceName: wamp-crypto-util
           servicePort: 80
           weight: 100
 
       # Reference to comprehensive error handling plugin configuration
-      plugin_config_name: global-plugin-uat
- 
+      plugin_config_name: global-plugin-prod
+
       # Additional plugins that apply to this route
       plugins:
         - name: proxy-rewrite
           enable: true
           config:
-            regex_uri: ["^/api/v1/external(?:/(.*))?/?$", "/v1/$1"]
+            regex_uri: ["^/api/v1/crypto(?:/(.*))?/?$", "/v1/$1"]

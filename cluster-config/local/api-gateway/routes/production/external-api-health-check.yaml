@@ -2,19 +2,19 @@ apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
 metadata:
   name: external-api-health-check
-  namespace: wamp-sit
+  namespace: wamp-production
 spec:
   # Define the HTTP rules for this health check route
   http:
-    - name: external-api-health-check-sit
+    - name: external-api-health-check-prod
       # Match requests to the health check path
       match:
         hosts:
-          - "wamp-gw-nonprod.muangthai.co.th"
-          - "oapi-sit.dev.muangthai.co.th"
+          - "wamp-gw.muangthai.co.th"
+          - "oapi.muangthai.co.th"
         paths:
-          - /sit/api/v1/external/health-check/livez
-          - /sit/api/v1/external/health-check/readyz
+          - /api/v1/external/health-check/livez
+          - /api/v1/external/health-check/readyz
         methods:
           - GET
           
@@ -58,4 +58,4 @@ spec:
         - name: proxy-rewrite
           enable: true
           config:
-            regex_uri: ["^/sit/api/v1/external/health-check/(.*)$", "/health-check/$1"]
+            regex_uri: ["^/api/v1/external/health-check/(.*)$", "/health-check/$1"]

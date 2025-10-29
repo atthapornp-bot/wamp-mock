@@ -9,7 +9,7 @@ spec:
         elements:
           - name: local
             server: https://kubernetes.default.svc
-            clusterName: wamp-nonprod
+            clusterName: wamp-prod
             awsRegion: ap-southeast-1
 
   template:

@@ -11,7 +11,7 @@ spec:
         elements:
           - name: local
             server: https://kubernetes.default.svc
-            clusterName: wamp-nonprod
+            clusterName: wamp-prod
             awsRegion: ap-southeast-1
 
   template:
@@ -120,7 +120,7 @@ spec:
                 [OUTPUT]
                     Name s3
                     Match *
-                    bucket wamp-nonprod-s3
+                    bucket wamp-prod-s3
                     region ${AWS_REGION}
                     # S3 key format with proper tag structure
                     # Tag format: namespace.app.pod.log_type
@@ -180,11 +180,11 @@ spec:
             # Environment variables for configuration
             env:
               - name: CLUSTER_NAME
-                value: "wamp-nonprod"
+                value: "wamp-prod"
               - name: AWS_REGION
                 value: "ap-southeast-1"
               - name: WAMP_NAMESPACE
-                value: wamp-sit
+                value: wamp-production
               - name: AWS_ACCESS_KEY_ID
                 valueFrom:
                   secretKeyRef:

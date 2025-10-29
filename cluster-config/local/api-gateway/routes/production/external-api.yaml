@@ -1,34 +1,37 @@
 apiVersion: apisix.apache.org/v2
 kind: ApisixRoute
 metadata:
-  name: crypto-util
-  namespace: wamp-sit
+  name: external-api
+  namespace: wamp-production
 spec:
   # Define the HTTP rules for this route
   http:
-    - name: crypto-util-sit
+    - name: external-api-prod
       # Match requests to this path pattern
       match:
         hosts:
-          - "wamp-gw-nonprod.muangthai.co.th"
+          - "wamp-gw.muangthai.co.th"
+          - "oapi.muangthai.co.th"
         paths:
-          - /sit/api/v1/crypto
-          - /sit/api/v1/crypto/*
+          - /api/v1/external/confirm-quotation
+          - /api/v1/external/get-quotation
+          - /api/v1/external/reference-code
         methods:
           - POST
+          
 
       # Where to send authenticated requests
       backends:
-        - serviceName: wamp-crypto-util
+        - serviceName: wamp-external-api
           servicePort: 80
           weight: 100
 
       # Reference to comprehensive error handling plugin configuration
-      plugin_config_name: global-plugin-sit
-
+      plugin_config_name: global-plugin-prod
+ 
       # Additional plugins that apply to this route
       plugins:
         - name: proxy-rewrite
           enable: true
           config:
-            regex_uri: ["^/sit/api/v1/crypto(?:/(.*))?/?$", "/v1/$1"]
+            regex_uri: ["^/api/v1/external(?:/(.*))?/?$", "/v1/$1"]
