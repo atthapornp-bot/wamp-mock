@@ -59,10 +59,10 @@ spec:
               value: grafana.{{values.baseDomain}}
 
             ## Prometheus Volume
-            # - name: prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.metadata.name
-            #   value: prometheus
-            # - name: prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage
-            #   value: 10Gi
+            - name: prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.metadata.name
+              value: prometheus
+            - name: prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage
+              value: 50Gi
 
           values: |
             ## https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
@@ -85,6 +85,15 @@ spec:
               ## Settings affecting alertmanagerSpec
               ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#alertmanagerspec
               alertmanagerSpec:
+                ## Resource limits & requests
+                resources:
+                  limits:
+                    cpu: 200m
+                    memory: 256Mi
+                  requests:
+                    cpu: 100m
+                    memory: 128Mi
+
                 ## Assign custom affinity rules to the alertmanager instance
                 affinity:
                   nodeAffinity:
@@ -122,6 +131,15 @@ spec:
             grafana:
               enabled: true
 
+              ## Resource limits & requests
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+
               ## Pod Annotations
               podAnnotations:
                 fluentbit.io/exclude: "true"
@@ -138,13 +156,20 @@ spec:
                 userKey: admin-user
                 passwordKey: admin-password
 
+              ## grafana.ini configuration
+              grafana.ini:
+                server:
+                  domain: wamp-grafana.muangthai.co.th
+                  root_url: https://wamp-grafana.muangthai.co.th
+
               replicas: 1
 
-              # persistence:
-              #   accessModes:
-              #     - ReadWriteOnce
-              #   enabled: true
-              #   size: 5Gi
+              persistence:
+                storageClassName: database-gp3
+                accessModes:
+                  - ReadWriteOnce
+                enabled: true
+                size: 50Gi
 
               ingress:
                 enabled: true
@@ -168,6 +193,9 @@ spec:
                   service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
                   service.beta.kubernetes.io/aws-load-balancer-scheme: internal
                   service.beta.kubernetes.io/aws-load-balancer-subnets: prod-salestool-subnet-tgw-ap-southeast-1a, prod-salestool-subnet-tgw-ap-southeast-1b
+                  # service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:ap-southeast-1:043309326086:certificate/ffb69cc6-e83a-4daf-a226-64834398ca46
+                  # service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+                  # service.beta.kubernetes.io/aws-load-balancer-manage-backend-security-group-rules: "true"
                 ports:
                   - port: 443
                     targetPort: 3000
@@ -206,14 +234,38 @@ spec:
 
             kubeStateMetrics:
               enabled: true
+              ## Resource limits & requests
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
 
             ## Deploy node exporter as a daemonset to all nodes
             nodeExporter:
               enabled: true
+              ## Resource limits & requests
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+                requests:
+                  cpu: 1m
+                  memory: 16Mi
 
             ## Configuration for prometheus-node-exporter subchart
             ##
             prometheus-node-exporter:
+              ## Resource limits & requests  
+              resources:
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+                requests:
+                  cpu: 1m
+                  memory: 16Mi
               prometheus:
                 monitor:
                   enabled: true
@@ -231,6 +283,15 @@ spec:
             ## Manages Prometheus and Alertmanager components
             prometheusOperator:
               enabled: true
+
+              ## Resource limits & requests
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
 
               ## Assign custom affinity rules to the prometheus operator
               ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
@@ -277,6 +338,14 @@ spec:
               ## Settings affecting prometheusSpec
               ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md#prometheusspec
               prometheusSpec:
+                ## Resource limits & requests
+                resources:
+                  limits:
+                    cpu: 2000m
+                    memory: 4Gi
+                  requests:
+                    cpu: 500m
+                    memory: 2Gi
 
                 ## Discover, See https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api.md
                 ruleNamespaceSelector: {}
@@ -336,11 +405,12 @@ spec:
 
                 ## Prometheus StorageSpec for persistent data
                 ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/storage.md
-                # storageSpec:
-                #   volumeClaimTemplate:
-                #     spec:
-                #       accessModes:
-                #         - ReadWriteOnce
-                #       resources:
-                #         requests:
-                #           storage: 5Gi
+                storageSpec:
+                  volumeClaimTemplate:
+                    spec:
+                      storageClassName: database-gp3
+                      accessModes:
+                        - ReadWriteOnce
+                      resources:
+                        requests:
+                          storage: 50Gi
