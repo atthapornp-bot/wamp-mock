@@ -1,0 +1,264 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: fluent-bit
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  generators:
+    - list:
+        elements:
+          - name: local
+            server: https://kubernetes.default.svc
+            clusterName: wamp-nonprod
+            awsRegion: ap-southeast-1
+
+  template:
+    metadata:
+      name: "{{name}}-fluent-bit"
+
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+
+      project: cluster-ops
+
+      destination:
+        namespace: logging
+        server: "{{server}}"
+
+      source:
+        repoURL: https://fluent.github.io/helm-charts
+        chart: fluent-bit
+        targetRevision: "0.50.0"  # Use latest stable version
+        helm:
+          releaseName: fluent-bit
+          values: |
+            # DaemonSet ensures FluentBit runs on every node
+            kind: DaemonSet
+            
+            # Resource management - important for production
+            resources:
+              limits:
+                cpu: 200m
+                memory: 200Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            
+            # Service account with necessary permissions
+            serviceAccount:
+              create: true
+              annotations:
+                # This annotation links to IAM role for S3 access (dev account)
+                eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
+            
+            # Core FluentBit configuration
+            config:
+              # Service configuration - defines global behavior
+              service: |
+                [SERVICE]
+                    # Daemon Off means FluentBit runs as a DaemonSet
+                    Daemon Off
+                    # Flush interval - how often to send logs (in seconds)
+                    Flush 5
+                    # Set the logging level for Fluent Bit itself
+                    Log_Level info
+                    # HTTP server for health checks and metrics
+                    HTTP_Server On
+                    HTTP_Listen 0.0.0.0
+                    HTTP_Port 2020
+                    # Storage settings for buffering
+                    storage.path  /var/log/flb-storage/
+                    storage.sync  normal
+                    storage.checksum off
+                    storage.backlog.mem_limit 50M
+                    Parsers_File /fluent-bit/etc/conf/custom_parsers.conf
+
+              # Input plugins - where logs come from
+              inputs: |
+                [INPUT]
+                    # Use the tail input plugin to read container logs
+                    Name              tail
+                    # Path where Kubernetes stores container logs
+                    Path              /var/log/containers/*wamp*.log
+                    # Use CRI parser since most K8s clusters use containerd/CRI-O
+                    Parser            cri
+                    # Tag pattern - extract namespace, pod, and container from filename
+                    # Example: /var/log/containers/wamp-api-697fb68ddb-kt56t_wamp-sit_wamp-api-d789ea143ef6186782ec84f0b85a25d6ff0a141c8780383340ede2f4e2f9f07d.log
+                    # Extracts: pod_name=wamp-api-697fb68ddb-kt56t, namespace_name=wamp-sit, app_name=wamp-api
+                    Tag_Regex         (?<pod_name>(?<app_name>wamp-api|wamp-crypto-util|wamp-external-api|wamp-job-housekeeping|wamp-job-occupation|wamp-web)-[a-z0-9]+-[a-z0-9]+)_(?<namespace_name>[^_]+)_(?<container_name>.+)\.log$
+                    # IMPORTANT: Use a tag that won't match output filters directly
+                    Tag               <namespace_name>.<app_name>.<pod_name>
+                    # Memory buffer limit per file
+                    Mem_Buf_Limit     50MB
+                    # Refresh interval for discovering new files
+                    Refresh_Interval  5
+                    Rotate_Wait       5
+
+              # Filters - transform and enrich logs
+              filters: |
+                # filter: Parse log content if it's JSON
+                [FILTER]
+                    Name parser
+                    Match *
+                    Key_Name log
+                    Parser json_parser
+                    Reserve_Data On
+
+              # Output plugins - where logs go
+              outputs: |
+                # S3 output - only process rewritten logs
+                [OUTPUT]
+                    Name s3
+                    Match *
+                    bucket wamp-nonprod-s3
+                    region ${AWS_REGION}
+                    # S3 key format with proper tag structure
+                    # Tag format: namespace.app.pod.log_type
+                    # Example: wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
+                    # Result: /kubernetes-logs/wamp-sit/wamp-api/year=2025/month=09/day=12/hour=03/wamp-api-697fb68ddb-kt56t/wamp-api-697fb68ddb-kt56t-activity_log-20250912-032609.log
+                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-%Y%m%d-%H%M%S.log
+                    s3_key_format_tag_delimiters .
+                    content_type      text/plain
+                    total_file_size    10M
+                    use_put_object     On
+                    static_file_path   true
+
+                [OUTPUT]
+                    Name loki
+                    Match *
+                    # Loki endpoint configuration
+                    uri http://loki.loki:3100/loki/api/v1/push
+                    # Labels for log streams - Loki uses labels for indexing
+                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
+                    # Remove metadata to reduce log size
+                    remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
+                    # Auto kubernetes labels - adds all k8s labels as Loki labels
+                    auto_kubernetes_labels on
+                    # Tenant ID for multi-tenant Loki setups
+                    tenant_id wamp
+                    # Line format - how to format the log line
+                    line_format json
+              
+              # Custom parsers for different log formats
+              customParsers: |
+                [PARSER]
+                    Name docker_no_time
+                    Format json
+                    Time_Keep Off
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L
+
+                [PARSER]
+                    Name containerd
+                    Format regex
+                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+                [PARSER]
+                    Name cri
+                    Format regex
+                    Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$
+                    Time_Key time
+                    Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+                    Decode_Field_As json log
+
+                [PARSER]
+                    Name json_parser
+                    Format json
+
+            # Environment variables for configuration
+            env:
+              - name: CLUSTER_NAME
+                value: "wamp-nonprod"
+              - name: AWS_REGION
+                value: "ap-southeast-1"
+              - name: WAMP_NAMESPACE
+                value: wamp-sit
+              - name: AWS_ACCESS_KEY_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_ACCESS_KEY_ID
+              - name: AWS_SECRET_ACCESS_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: fluent-bit
+                    key: AWS_SECRET_ACCESS_KEY
+
+            # Tolerations to allow FluentBit to run on all nodes
+            # This ensures comprehensive log collection across the entire cluster
+            tolerations:
+              # Allow scheduling on nodes with NoSchedule taints
+              - operator: Exists
+                effect: NoSchedule
+              # Allow scheduling on nodes with PreferNoSchedule taints  
+              - operator: Exists
+                effect: PreferNoSchedule
+              # Allow scheduling on nodes with NoExecute taints
+              - operator: Exists
+                effect: NoExecute
+
+            ## @param affinity [object] Affinity for Sealed Secret pods assignment
+            ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                          - linux
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 3
+                    preference:
+                      matchExpressions:
+                        - key: project
+                          operator: In
+                          values:
+                            - cluster-ops
+                  - weight: 2
+                    preference:
+                      matchExpressions:
+                        - key: environment
+                          operator: In
+                          values:
+                            - critical
+                  - weight: 1
+                    preference:
+                      matchExpressions:
+                        - key: eks.amazonaws.com/capacityType
+                          operator: In
+                          values:
+                            - ON_DEMAND
+
+            ## @section Metrics parameters
+            metrics:
+              ## Prometheus Operator ServiceMonitor configuration
+              serviceMonitor:
+                ## @param metrics.serviceMonitor.enabled Specify if a ServiceMonitor will be deployed for Prometheus Operator
+                enabled: false
+                ## @param metrics.serviceMonitor.namespace Namespace where Prometheus Operator is running in
+                namespace: kube-prometheus-stack
+
+              ## Grafana dashboards configuration
+              dashboards:
+                ## @param metrics.dashboards.create Specifies whether a ConfigMap with a Grafana dashboard configuration should be created
+                ## ref https://github.com/helm/charts/tree/master/stable/grafana#configuration
+                create: false
+                ## @param metrics.dashboards.namespace Namespace where Grafana dashboard ConfigMap is deployed
+                namespace: kube-prometheus-stack
+                ## @param metrics.dashboards.labels Extra labels to be added to the Grafana dashboard ConfigMap
+                labels:
+                  grafana_dashboard: 1

@@ -88,6 +88,13 @@ spec:
                 ## Assign custom affinity rules to the alertmanager instance
                 affinity:
                   nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                          - key: kubernetes.io/os
+                            operator: In
+                            values:
+                              - linux
                     preferredDuringSchedulingIgnoredDuringExecution:
                       - weight: 3
                         preference:
@@ -153,6 +160,20 @@ spec:
                     hosts:
                       - grafana.local
 
+              ## Service configuration
+              service:
+                type: LoadBalancer
+                annotations:
+                  service.beta.kubernetes.io/aws-load-balancer-type: external
+                  service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+                  service.beta.kubernetes.io/aws-load-balancer-scheme: internal
+                  service.beta.kubernetes.io/aws-load-balancer-subnets: dev-salestool-subnet-tgw-ap-southeast-1a, dev-salestool-subnet-tgw-ap-southeast-1b
+                ports:
+                  - port: 443
+                    targetPort: 3000
+                    protocol: TCP
+                    name: https
+
             kubeApiServer:
               enabled: true
 
@@ -215,6 +236,13 @@ spec:
               ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
               affinity:
                 nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                      - matchExpressions:
+                        - key: kubernetes.io/os
+                          operator: In
+                          values:
+                            - linux
                   preferredDuringSchedulingIgnoredDuringExecution:
                     - weight: 3
                       preference:
@@ -276,6 +304,13 @@ spec:
                 ## Assign custom affinity rules to the prometheus instance
                 affinity:
                   nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                          - key: kubernetes.io/os
+                            operator: In
+                            values:
+                              - linux
                     preferredDuringSchedulingIgnoredDuringExecution:
                       - weight: 3
                         preference:

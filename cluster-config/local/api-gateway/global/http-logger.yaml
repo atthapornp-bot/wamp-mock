@@ -1,0 +1,114 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixGlobalRule
+metadata:
+  name: global-loki-logger
+  namespace: apisix-system
+  labels:
+    app: apisix
+    component: logging
+  annotations:
+    # Document what this rule does for future maintainers
+    description: "Global Loki logging with intelligent error capture"
+    apisix.apache.org/enable: "true"
+spec:
+  plugins:
+    - name: "loki-logger"  # Using the specialized Loki plugin
+      enable: true
+      config:
+        # Loki server configuration - much simpler than generic HTTP
+        endpoint_addrs:
+          - "http://loki.loki:3100"
+        ssl_verify: false  # Disable SSL verification for development/testing
+
+        # Tenant configuration for multi-tenant Loki setups
+        # Since we're using single-tenant Loki, we can set a default tenant
+        tenant_id: "apisix"
+        
+        # Stream labels - these become Loki's indexed labels for efficient querying
+        # Think of labels as the "filing system" that Loki uses to organize logs
+        labels:
+          service: "api-gateway"
+          component: "apisix"
+          environment: "development"
+          # Dynamic labels based on request characteristics
+          method: "$request_method"
+          # Categorize status codes for efficient filtering
+          # Instead of hundreds of specific codes, we use meaningful categories
+          status_class: |
+            $lua{
+              local status = tonumber(ngx.var.status)
+              if status >= 500 then
+                return "server_error"
+              elseif status >= 400 then
+                return "client_error"
+              elseif status >= 300 then
+                return "redirect"
+              elseif status >= 200 then
+                return "success"
+              else
+                return "informational"
+              end
+            }
+          host: "$host"
+        
+        # Log content configuration - this is the actual log message content
+        # Unlike labels, this content is searchable but not indexed
+        log_format:
+          # Essential request identification and timing information
+          timestamp: "$time_iso8601"
+          request_id: "$request_id"
+          
+          # HTTP request details that help with troubleshooting
+          method: "$request_method"
+          uri: "$request_uri"
+          query_string: "$args"
+          status: "$status"
+          
+          # Performance metrics crucial for monitoring
+          response_time_ms: "$request_time"
+          upstream_response_time_ms: "$upstream_response_time"
+          
+          # Client and network information for security and debugging
+          client_ip: "$remote_addr"
+          real_ip: "$http_x_real_ip"
+          forwarded_for: "$http_x_forwarded_for"
+          user_agent: "$http_user_agent"
+          
+          # Request and response size metrics for capacity planning
+          request_size_bytes: "$request_length"
+          response_size_bytes: "$bytes_sent"
+          
+          # Backend service information for distributed tracing
+          upstream_addr: "$upstream_addr"
+          upstream_status: "$upstream_status"
+          
+          # Protocol and routing information
+          scheme: "$scheme"
+          server_name: "$server_name"
+          
+          # Content type information for API analysis
+          request_content_type: "$http_content_type"
+          response_content_type: "$sent_http_content_type"
+        
+        # Filter configuration to exclude health check endpoints
+        # This prevents noisy health check logs from cluttering the log system
+        filter:
+          - ["uri", "!=", "/healthz"]
+          - ["uri", "!=", "/health"]
+          - ["uri", "!=", "/ping"]
+        
+        # Advanced configuration for handling edge cases
+        # These settings help the plugin handle problematic scenarios gracefully
+        include_req_body: false  # Default to not including request bodies
+        include_resp_body: false # Default to not including response bodies
+        
+        # Conditional body inclusion for error scenarios only
+        # This provides detailed debugging info when needed while maintaining efficiency
+        include_req_body_expr:
+          - ["status", ">=", 400]  # Include request body for client and server errors
+        include_resp_body_expr:
+          - ["status", ">=", 400]  # Include response body for error analysis
+        
+        # Error handling and reliability configuration
+        # These settings ensure the plugin behaves reliably under various conditions
+        drop_on_fail: false      # Don't drop logs if Loki is temporarily unavailable

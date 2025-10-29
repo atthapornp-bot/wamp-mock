@@ -1,0 +1,158 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: apisix-gateway
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - name: local
+            server: https://kubernetes.default.svc
+            clusterName: wamp-nonprod
+            awsRegion: ap-southeast-1
+
+  template:
+    metadata:
+      name: "{{name}}-apisix-gateway"
+
+    spec:
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+
+      project: cluster-ops
+
+      destination:
+        namespace: "apisix-system"
+        server: "{{server}}"
+
+      source:
+        repoURL: https://charts.apiseven.com
+        chart: apisix
+        targetRevision: 2.10.0
+
+        # hhttps://github.com/apache/apisix-helm-chart/blob/master/charts/apisix/values.yaml
+        helm:
+          values: |
+            # Core APISIX Configuration
+            # This configures APISIX as an API Gateway that will receive traffic from ALB
+            # and forward processed requests to ingress-nginx-controller
+            apisix:
+              # Admin API for dynamic configuration
+              admin:
+                enabled: true
+                port: 9180
+                # Allow admin access from within the cluster
+                allow_admin:
+                  - 172.16.0.0/16  # Internal cluster CIDR
+                  - 192.168.0.0/16 # MTL VPN CIDR block
+
+              # Router configuration optimized for performance
+              router:
+                http: 'radixtree_uri'  # Fast URI matching algorithm
+
+              # Essential plugins for API Gateway functionality
+              # We're being selective here - only enabling plugins we'll actually use
+              # This improves performance compared to enabling everything
+              plugins:
+                # Authentication & Authorization
+                - key-auth           # API key authentication
+                - jwt-auth           # JWT token validation
+                - basic-auth         # Basic HTTP authentication
+                - consumer-restriction # Restrict access to specific consumers
+
+                # Traffic Control & Security
+                - limit-count        # Rate limiting (requests per time window)
+                - limit-conn         # Connection limiting
+                - ip-restriction     # IP allowlist/blocklist
+                - cors               # Cross-origin resource sharing
+
+                # Request/Response Transformation
+                - proxy-rewrite      # Header and URI modification
+                - request-validation # Request schema validation
+                - response-rewrite   # Response transformation
+                - echo               # Echo plugin for health checks and testing
+                - serverless-pre-function # Custom Lua functions for dynamic responses
+                - serverless-post-function # Custom Lua functions for dynamic responses
+
+                # Observability & Logging
+                - prometheus         # Metrics collection
+                - http-logger        # HTTP access logging
+                - loki-logger        # Loki logging for structured log storage
+                - request-id         # Request tracking
+
+                # Advanced Features
+                - proxy-cache        # Response caching
+                - traffic-split      # A/B testing and canary deployments
+                - fault-injection    # Chaos engineering support
+
+            # CRITICAL: Disable the ingress controller
+            # This is the key change that resolves the architectural conflict
+            # We want APISIX as a gateway, not as an ingress controller replacement
+            ingress-controller:
+              enabled: true
+              config:
+                apisix:
+                  adminAPIVersion: "v3"
+                  serviceName: local-apisix-gateway-admin
+                  serviceNamespace: apisix-system
+                  servicePort: 9180
+
+            # Service Configuration
+            # We use ClusterIP here because ALB will target this service internally
+            # This creates a clean separation: ALB handles external load balancing,
+            # APISIX handles API gateway concerns
+            gateway:
+              type: ClusterIP
+              http:
+                enabled: true
+                servicePort: 80
+                containerPort: 9080
+              https:
+                enabled: true
+                servicePort: 443
+                containerPort: 9443
+              # Admin API service (for configuration management)
+              admin:
+                enabled: true
+                servicePort: 9180
+                containerPort: 9180
+
+
+            # etcd Configuration for APISIX state storage
+            # This is where APISIX stores its routing rules and plugin configurations
+            etcd:
+              enabled: true
+              image:
+                registry: docker.io
+                repository: bitnamilegacy/etcd
+              replicaCount: 3
+              auth:
+                rbac:
+                  enabled: false  # Simplified for internal cluster use
+              persistence:
+                enabled: true
+                storageClass: "database-gp3"
+                size: 8Gi
+              resources:
+                limits:
+                  memory: "1Gi"
+                  cpu: "500m"
+                requests:
+                  memory: "512Mi"
+                  cpu: "250m"
+
+            # Resource allocation
+            # Sized appropriately for API gateway workload
+            replicaCount: 2
+
+            resources:
+              limits:
+                cpu: 500m
+                memory: 512Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi

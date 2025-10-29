@@ -32,7 +32,7 @@ spec:
       source:
         repoURL: https://kubernetes.github.io/ingress-nginx
         chart: ingress-nginx
-        targetRevision: 4.11.2 # appVersion: 1.11.2
+        targetRevision: 4.12.1 # appVersion: 1.12.1
         helm:
           parameters:
             ## Is this the default ingressClass for the cluster
@@ -75,7 +75,11 @@ spec:
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type
               value: external
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-scheme
-              value: internet-facing
+              value: internal
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-subnets
+              value: dev-salestool-subnet-tgw-ap-southeast-1a, dev-salestool-subnet-tgw-ap-southeast-1b
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-private-ipv4-addresses
+              value: 172.20.31.71, 172.20.31.184
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-backend-protocol
               value: tcp
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-proxy-protocol
@@ -154,6 +158,7 @@ spec:
                 hsts-include-subdomains: "false"
                 allow-snippet-annotations: "true"
                 proxy-add-original-uri-header: "true"
+                annotations-risk-level: "Critical"
 
               # https://kubernetes.github.io/ingress-nginx/deploy/baremetal/#via-the-host-network
               dnsPolicy: ClusterFirst
@@ -171,7 +176,7 @@ spec:
                 name: nginx
                 enabled: true
                 # -- Is this the default ingressClass for the cluster
-                default: false
+                default: true
 
               publishService:
                 # -- Enable 'publishService' or not

@@ -1,0 +1,34 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: crypto-util
+  namespace: wamp-uat
+spec:
+  # Define the HTTP rules for this route
+  http:
+    - name: crypto-util-uat
+      # Match requests to this path pattern
+      match:
+        hosts:
+          - "wamp-gw-nonprod.muangthai.co.th"
+        paths:
+          - /api/v1/crypto
+          - /api/v1/crypto/*
+        methods:
+          - POST
+
+      # Where to send authenticated requests
+      backends:
+        - serviceName: wamp-crypto-util
+          servicePort: 80
+          weight: 100
+
+      # Reference to comprehensive error handling plugin configuration
+      plugin_config_name: global-plugin-uat
+
+      # Additional plugins that apply to this route
+      plugins:
+        - name: proxy-rewrite
+          enable: true
+          config:
+            regex_uri: ["^/api/v1/crypto(?:/(.*))?/?$", "/v1/$1"]
