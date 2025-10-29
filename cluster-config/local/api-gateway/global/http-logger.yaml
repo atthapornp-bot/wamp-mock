@@ -29,7 +29,7 @@ spec:
         labels:
           service: "api-gateway"
           component: "apisix"
-          environment: "development"
+          environment: "production"
           # Dynamic labels based on request characteristics
           method: "$request_method"
           # Categorize status codes for efficient filtering

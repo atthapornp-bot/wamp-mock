@@ -36,6 +36,6 @@ spec:
       source:
         repoURL: https://gitmtl.muangthai.co.th/mtl-digital/mtl-wamp/gitops/kubernetes/cluster-ops.git
         path: cluster-config/{{name}}
-        targetRevision: refs/heads/release/dev
+        targetRevision: refs/heads/release/production
         directory:
           recurse: true

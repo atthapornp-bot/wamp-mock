@@ -9,7 +9,7 @@ spec:
         elements:
           - name: local
             server: https://kubernetes.default.svc
-            clusterName: wamp-nonprod
+            clusterName: wamp-prod
             awsRegion: ap-southeast-1
 
   template:
@@ -77,9 +77,9 @@ spec:
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-scheme
               value: internal
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-subnets
-              value: dev-salestool-subnet-tgw-ap-southeast-1a, dev-salestool-subnet-tgw-ap-southeast-1b
-            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-private-ipv4-addresses
-              value: 172.20.31.71, 172.20.31.184
+              value: prod-salestool-subnet-tgw-ap-southeast-1a, prod-salestool-subnet-tgw-ap-southeast-1b
+            # - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-private-ipv4-addresses
+            #   value: 172.20.31.71, 172.20.31.184
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-backend-protocol
               value: tcp
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-proxy-protocol
