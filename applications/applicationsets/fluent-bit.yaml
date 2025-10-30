@@ -120,7 +120,7 @@ spec:
                 [OUTPUT]
                     Name s3
                     Match *
-                    bucket wamp-prod-s3
+                    bucket prod-mtl-kbank-wamp-s3
                     region ${AWS_REGION}
                     # S3 key format with proper tag structure
                     # Tag format: namespace.app.pod.log_type
@@ -132,22 +132,6 @@ spec:
                     total_file_size    10M
                     use_put_object     On
                     static_file_path   true
-
-                [OUTPUT]
-                    Name loki
-                    Match *
-                    # Loki endpoint configuration
-                    uri http://loki.loki:3100/loki/api/v1/push
-                    # Labels for log streams - Loki uses labels for indexing
-                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
-                    # Remove metadata to reduce log size
-                    remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
-                    # Auto kubernetes labels - adds all k8s labels as Loki labels
-                    auto_kubernetes_labels on
-                    # Tenant ID for multi-tenant Loki setups
-                    tenant_id wamp
-                    # Line format - how to format the log line
-                    line_format json
               
               # Custom parsers for different log formats
               customParsers: |
