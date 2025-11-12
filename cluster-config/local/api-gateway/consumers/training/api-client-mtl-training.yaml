@@ -1,0 +1,12 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixConsumer
+metadata:
+  name: api-client-mtl-training
+  namespace: apisix-system
+spec:
+  # Configure API key authentication for this consumer
+  authParameter:
+    keyAuth:
+      secretRef:
+        name: api-client-mtl-training-key
+   

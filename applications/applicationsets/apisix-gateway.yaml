@@ -132,7 +132,14 @@ spec:
               replicaCount: 3
               auth:
                 rbac:
+                  create: false
                   enabled: false  # Simplified for internal cluster use
+                token:
+                  enabled: true
+                  type: jwt
+                  privateKey:
+                    existingSecret: apisix-gateway-etcd-jwt-token
+                    filename: jwt-token.pem
               persistence:
                 enabled: true
                 storageClass: "database-gp3"

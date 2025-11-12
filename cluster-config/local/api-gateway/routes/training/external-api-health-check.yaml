@@ -1,0 +1,61 @@
+apiVersion: apisix.apache.org/v2
+kind: ApisixRoute
+metadata:
+  name: external-api-health-check
+  namespace: wamp-training
+spec:
+  # Define the HTTP rules for this health check route
+  http:
+    - name: external-api-health-check-training
+      # Match requests to the health check path
+      match:
+        hosts:
+          - "wamp-gw-nonprod.muangthai.co.th"
+          - "oapi-uat.dev.muangthai.co.th"
+        paths:
+          - /training/api/v1/external/health-check/livez
+          - /training/api/v1/external/health-check/readyz
+        methods:
+          - GET
+          
+      # Where to send health check requests
+      backends:
+        - serviceName: wamp-external-api
+          servicePort: 80
+          weight: 100
+
+      # Health check endpoints don't need authentication
+      # Disable auth-related plugins from global-plugin
+      plugins:
+        # Generate request ID for tracking
+        - name: request-id
+          enable: true
+          config:
+            include_in_response: true
+            header_name: "X-Request-ID"
+            algorithm: "uuid"
+            
+        # Disable authentication for health checks
+        - name: request-validation
+          enable: false
+          
+        - name: consumer-restriction
+          enable: false
+          
+        - name: key-auth
+          enable: false
+          
+        # Keep rate limiting but with higher limits for health checks
+        - name: limit-count
+          enable: true
+          config:
+            count: 100000
+            time_window: 60
+            rejected_code: 429
+            policy: "local"
+            
+        # Proxy rewrite to forward to backend
+        - name: proxy-rewrite
+          enable: true
+          config:
+            regex_uri: ["^/training/api/v1/external/health-check/(.*)$", "/health-check/$1"]
