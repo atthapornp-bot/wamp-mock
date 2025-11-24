@@ -44,7 +44,7 @@ spec:
           values: |
             # DaemonSet ensures FluentBit runs on every node
             kind: DaemonSet
-            
+
             # Resource management - important for production
             resources:
               limits:
@@ -53,14 +53,14 @@ spec:
               requests:
                 cpu: 100m
                 memory: 128Mi
-            
+
             # Service account with necessary permissions
             serviceAccount:
               create: true
               annotations:
                 # This annotation links to IAM role for S3 access (dev account)
                 eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
-            
+
             # Core FluentBit configuration
             config:
               # Service configuration - defines global behavior
@@ -137,9 +137,11 @@ spec:
                     Name loki
                     Match *
                     # Loki endpoint configuration
-                    uri http://loki.loki:3100/loki/api/v1/push
-                    # Labels for log streams - Loki uses labels for indexing
-                    labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
+                    Host loki.loki
+                    Port 3100
+                    Uri /loki/api/v1/push
+                    # Labels for log streams - Loki uses labels for indexing (keep minimal to avoid limits)
+                    Labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
                     # Remove metadata to reduce log size
                     remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
                     # Auto kubernetes labels - adds all k8s labels as Loki labels
@@ -148,7 +150,7 @@ spec:
                     tenant_id wamp
                     # Line format - how to format the log line
                     line_format json
-              
+
               # Custom parsers for different log formats
               customParsers: |
                 [PARSER]
@@ -202,7 +204,7 @@ spec:
               # Allow scheduling on nodes with NoSchedule taints
               - operator: Exists
                 effect: NoSchedule
-              # Allow scheduling on nodes with PreferNoSchedule taints  
+              # Allow scheduling on nodes with PreferNoSchedule taints
               - operator: Exists
                 effect: PreferNoSchedule
               # Allow scheduling on nodes with NoExecute taints
