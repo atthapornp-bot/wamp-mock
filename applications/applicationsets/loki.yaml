@@ -100,13 +100,13 @@ spec:
                 type: s3
                 bucketNames:
                   # log data storage
-                  chunks: {{s3Bucket}}/chunks
+                  chunks: {{s3Bucket}}
 
                   # alerting rules, recording rules, and ruler state
-                  ruler: {{s3Bucket}}/ruler
+                  ruler: {{s3Bucket}}
 
                   # admin operations and metadata
-                  admin: {{s3Bucket}}/admin
+                  admin: {{s3Bucket}}
                 s3:
                   # Use IRSA (IAM Roles for Service Accounts) for authentication
                   region: "{{awsRegion}}"
@@ -118,6 +118,12 @@ spec:
                   storage_class: "STANDARD"
                   # sse:
                   #   type: "SSE-S3"
+
+              storage_config:
+                aws:
+                  region: "{{awsRegion}}"
+                  bucketnames: "{{s3Bucket}}"
+                  s3forcepathstyle: false
 
               # Schema configuration for S3 storage (fresh start)
               schemaConfig:
