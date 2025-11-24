@@ -83,11 +83,11 @@ spec:
                 # Log retention settings - stream-specific rules
                 retention_period: 7d  # Default fallback retention
                 # Selector is a Prometheus labels matchers that will apply the 'period'
-                retention_stream: |
-                  - selector: {namespace="kube-system"}
-                  period: 3d
-                  - selector: {namespace="loki"}
-                  period: 3d
+                # retention_stream: |
+                #   - selector: {namespace="kube-system"}
+                #   period: 3d
+                #   - selector: {namespace="loki"}
+                #   period: 3d
 
               # Common configuration
               commonConfig:
