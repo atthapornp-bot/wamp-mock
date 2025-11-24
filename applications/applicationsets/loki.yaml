@@ -12,7 +12,7 @@ spec:
             clusterName: wamp-nonprod
             awsRegion: ap-southeast-1
             s3Bucket: wamp-nonprod-s3
-            serviceAccountRoleArn: role-arn: "arn:aws:iam::390844743995:role/loki-s3-role"
+            serviceAccountRoleArn: "arn:aws:iam::390844743995:role/loki-s3-role"
 
   template:
     metadata:
