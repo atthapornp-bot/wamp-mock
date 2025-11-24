@@ -57,7 +57,7 @@ spec:
             loki:
               revisionHistoryLimit: 3
               # Should authentication be enabled
-              auth_enabled: true
+              auth_enabled: false
 
               # Server configuration https://grafana.com/docs/loki/latest/configure/#server
               server:
