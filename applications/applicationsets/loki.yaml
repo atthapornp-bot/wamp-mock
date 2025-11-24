@@ -136,9 +136,10 @@ spec:
                 retention_enabled: true
                 retention_delete_delay: 2h
                 retention_delete_worker_count: 150
-                delete_request_store: s3
-                delete_request_store_key_prefix: index/
-                delete_request_cancel_period: 24h
+                # Temporarily disable delete store to fix startup issue
+                # delete_request_store: s3
+                # delete_request_store_key_prefix: index/
+                # delete_request_cancel_period: 24h
 
               ingester:
                 # The algorithm to use for compressing chunk
