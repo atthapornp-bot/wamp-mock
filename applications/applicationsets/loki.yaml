@@ -133,7 +133,7 @@ spec:
               compactor:
                 working_directory: /var/loki/compactor
                 compaction_interval: 10m
-                retention_enabled: true
+                retention_enabled: false
                 retention_delete_delay: 2h
                 retention_delete_worker_count: 150
                 # Temporarily disable delete store to fix startup issue
