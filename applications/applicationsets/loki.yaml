@@ -116,8 +116,8 @@ spec:
                   # DEEP_ARCHIVE, GLACIER_IR, INTELLIGENT_TIERING, ONEZONE_IA, OUTPOSTS,
                   # REDUCED_REDUNDANCY, STANDARD, STANDARD_IA.
                   storage_class: "STANDARD"
-                  sse:
-                    type: "SSE-S3"
+                  # sse:
+                  #   type: "SSE-S3"
 
               # Schema configuration for S3 storage (fresh start)
               schemaConfig:
@@ -172,6 +172,11 @@ spec:
                 # Keep a little bit lower than memory limits
                 - name: GOMEMLIMIT
                   value: 1640MiB # 80% of 2Gi
+
+              # Add startup delay and health checks
+              extraArgs:
+                - -log.level=debug  # Temporary for troubleshooting
+
               resources:
                 limits:
                   cpu: 1000m
@@ -189,7 +194,6 @@ spec:
                 enabled: true
                 size: 50Gi
                 storageClass: "database-gp3"
-
 
             # Disable Simple Scalable components for single binary mode
             write:
