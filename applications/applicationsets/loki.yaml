@@ -55,6 +55,7 @@ spec:
             deploymentMode: SingleBinary
 
             loki:
+              revisionHistoryLimit: 3
               # Should authentication be enabled
               auth_enabled: true
 
@@ -243,7 +244,7 @@ spec:
             chunksCache:
               # use memcached for chunks caching
               enabled: true
-              replicas: 1
+              replicas: 2 # to support pdb
               batchSize: 4
               parallelism: 5
               timeout: 100ms
