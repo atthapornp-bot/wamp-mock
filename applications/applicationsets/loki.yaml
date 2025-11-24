@@ -12,6 +12,7 @@ spec:
             clusterName: wamp-nonprod
             awsRegion: ap-southeast-1
             s3Bucket: wamp-nonprod-s3
+            serviceAccountRoleArn: role-arn: "arn:aws:iam::390844743995:role/loki-s3-role"
 
   template:
     metadata:
@@ -156,7 +157,7 @@ spec:
               create: true
               name: loki-s3-sa
               annotations:
-                eks.amazonaws.com/role-arn: "arn:aws:iam::ACCOUNT_ID:role/loki-s3-role"
+                eks.amazonaws.com/role-arn: "{{serviceAccountRoleArn}}"
 
             # Gateway configuration
             gateway:
