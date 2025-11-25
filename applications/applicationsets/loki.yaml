@@ -221,7 +221,7 @@ spec:
                     volumeClaimTemplate:
                       spec:
                         accessModes: ["ReadWriteOnce"]
-                        storageClassName: "gp3"
+                        storageClassName: "database-gp3"
                         resources:
                           requests:
                             storage: 20Gi
