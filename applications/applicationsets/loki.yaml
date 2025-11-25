@@ -110,7 +110,7 @@ spec:
                 s3:
                   # Use IRSA (IAM Roles for Service Accounts) for authentication
                   region: "{{awsRegion}}"
-                  s3ForcePathStyle: false
+                  s3ForcePathStyle: true
                   insecure: false
                   # Supported values are: GLACIER,
                   # DEEP_ARCHIVE, GLACIER_IR, INTELLIGENT_TIERING, ONEZONE_IA, OUTPOSTS,
@@ -123,7 +123,7 @@ spec:
                 aws:
                   region: "{{awsRegion}}"
                   bucketnames: "{{s3Bucket}}"
-                  s3forcepathstyle: false
+                  s3forcepathstyle: true
                 # tsdb_shipper:
                 #   object_store: s3
                 #   bucket: "{{s3Bucket}}"
