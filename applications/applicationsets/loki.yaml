@@ -154,7 +154,7 @@ spec:
                 retention_enabled: true   # Enable retention to manage disk usage
                 retention_delete_delay: 2h
                 retention_delete_worker_count: 150
-                Temporarily disable delete store to fix startup issue
+                # Temporarily disable delete store to fix startup issue
                 delete_request_store: s3
                 delete_request_store_key_prefix: index/
                 delete_request_cancel_period: 24h
