@@ -168,6 +168,15 @@ spec:
               querier:
                 # depend on memory size
                 max_concurrent: 2
+
+              # Disable ruler to prevent S3 access errors
+              ruler:
+                enable_api: false
+                enable_alertmanager_v2: false
+                storage:
+                  type: local
+                  local:
+                    directory: /tmp/rules
             test:
               enabled: false
             lokiCanary:
