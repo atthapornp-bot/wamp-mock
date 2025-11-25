@@ -106,8 +106,8 @@ spec:
                   # log data storage
                   chunks: {{s3Bucket}}/chunks
 
-                  # alerting rules, recording rules, and ruler state
-                  ruler: {{s3Bucket}}/ruler
+                  # # alerting rules, recording rules, and ruler state
+                  # ruler: {{s3Bucket}}/ruler
 
                   # admin operations and metadata
                   admin: {{s3Bucket}}/admin
@@ -204,7 +204,7 @@ spec:
               # Add startup delay and health checks
               extraArgs:
                 - -log.level=info  # Reduced from debug to prevent disk fill
-                - -target=ingester,distributor,querier,query-frontend,compactor  # Exclude ruler
+                # - -target=ingester,distributor,querier,query-frontend,compactor  # Exclude ruler
 
               resources:
                 limits:
