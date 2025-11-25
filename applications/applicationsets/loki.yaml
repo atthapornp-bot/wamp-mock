@@ -106,8 +106,8 @@ spec:
                   # log data storage
                   chunks: {{s3Bucket}}/chunks
 
-                  # # alerting rules, recording rules, and ruler state
-                  # ruler: {{s3Bucket}}/ruler
+                  # alerting rules, recording rules, and ruler state
+                  ruler: {{s3Bucket}}/ruler
 
                   # admin operations and metadata
                   admin: {{s3Bucket}}/admin
@@ -169,14 +169,18 @@ spec:
                 # depend on memory size
                 max_concurrent: 2
 
-              # Disable ruler to prevent S3 access errors
+              # Enable ruler for alerting and recording rules
               ruler:
-                enable_api: false
-                enable_alertmanager_v2: false
-                storage:
-                  type: local
-                  local:
-                    directory: /tmp/rules
+                enable_api: true
+                enable_alertmanager_v2: true
+                # storage:
+                #   type: s3
+                #   s3:
+                #     bucketnames: "{{s3Bucket}}"
+                #     prefix: ruler
+                #     region: "{{awsRegion}}"
+                #     s3ForcePathStyle: true
+
             test:
               enabled: false
             lokiCanary:
