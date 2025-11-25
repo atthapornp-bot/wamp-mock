@@ -214,9 +214,9 @@ spec:
                 size: 50Gi
                 storageClass: "database-gp3"
 
-              # Ephemeral volumes for compactor and WAL
+              # Single ephemeral volume for all Loki working directories
               extraVolumes:
-                - name: compactor-work
+                - name: loki-work
                   ephemeral:
                     volumeClaimTemplate:
                       spec:
@@ -224,16 +224,11 @@ spec:
                         storageClassName: "database-gp3"
                         resources:
                           requests:
-                            storage: 20Gi
-                - name: wal-data
-                  emptyDir:
-                    sizeLimit: 5Gi
+                            storage: 40Gi
 
               extraVolumeMounts:
-                - name: compactor-work
-                  mountPath: /var/loki/compactor
-                - name: wal-data
-                  mountPath: /var/loki/wal
+                - name: loki-work
+                  mountPath: /var/loki
 
             # Disable Simple Scalable components for single binary mode
             write:
