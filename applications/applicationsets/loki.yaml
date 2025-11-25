@@ -107,7 +107,7 @@ spec:
                   chunks: {{s3Bucket}}/chunks
 
                   # alerting rules, recording rules, and ruler state
-                  ruler: {{s3Bucket}}/ruler
+                  ruler: {{s3Bucket}}
 
                   # admin operations and metadata
                   admin: {{s3Bucket}}/admin
@@ -173,13 +173,6 @@ spec:
               ruler:
                 enable_api: true
                 enable_alertmanager_v2: true
-                # storage:
-                #   type: s3
-                #   s3:
-                #     bucketnames: "{{s3Bucket}}"
-                #     prefix: ruler
-                #     region: "{{awsRegion}}"
-                #     s3ForcePathStyle: true
 
             test:
               enabled: false
