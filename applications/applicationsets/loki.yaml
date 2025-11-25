@@ -73,10 +73,14 @@ spec:
                 split_queries_by_interval: 15m
                 query_timeout: 300s
 
-                # Global rate limits (est. for 1TB/day ingestion)
-                ingestion_rate_mb: 50
-                ingestion_burst_size_mb: 150
+                # Conservative rate limits to prevent disk fill (est. for 100GB/day ingestion)
+                ingestion_rate_mb: 10        # Reduced from 50MB/s to 10MB/s
+                ingestion_burst_size_mb: 30  # Reduced from 150MB to 30MB
                 max_line_size: 256000
+
+                # Additional disk protection limits
+                max_chunks_per_query: 2000000
+                max_query_series: 500
 
                 # Remove per-stream limits for single tenant
                 max_streams_per_user: 0
@@ -147,18 +151,20 @@ spec:
               compactor:
                 working_directory: /var/loki/compactor
                 compaction_interval: 10m
-                retention_enabled: false
+                retention_enabled: true   # Enable retention to manage disk usage
                 retention_delete_delay: 2h
                 retention_delete_worker_count: 150
-                # Temporarily disable delete store to fix startup issue
-                # delete_request_store: s3
-                # delete_request_store_key_prefix: index/
-                # delete_request_cancel_period: 24h
+                Temporarily disable delete store to fix startup issue
+                delete_request_store: s3
+                delete_request_store_key_prefix: index/
+                delete_request_cancel_period: 24h
 
               ingester:
                 # The algorithm to use for compressing chunk
                 chunk_encoding: snappy
-                max_chunk_age: 2h
+                max_chunk_age: 30m  # Reduced from 2h to 30m for faster S3 upload
+                chunk_idle_period: 10m
+                flush_check_period: 10s
               querier:
                 # depend on memory size
                 max_concurrent: 2
@@ -188,7 +194,7 @@ spec:
 
               # Add startup delay and health checks
               extraArgs:
-                - -log.level=debug  # Temporary for troubleshooting
+                - -log.level=info  # Reduced from debug to prevent disk fill
 
               resources:
                 limits:
@@ -204,9 +210,30 @@ spec:
 
               # Persistence configuration
               persistence:
-                enabled: true
+                enabled: false
                 size: 50Gi
                 storageClass: "database-gp3"
+
+              # Ephemeral volumes for compactor and WAL
+              extraVolumes:
+                - name: compactor-work
+                  ephemeral:
+                    volumeClaimTemplate:
+                      spec:
+                        accessModes: ["ReadWriteOnce"]
+                        storageClassName: "gp3"
+                        resources:
+                          requests:
+                            storage: 20Gi
+                - name: wal-data
+                  emptyDir:
+                    sizeLimit: 5Gi
+
+              extraVolumeMounts:
+                - name: compactor-work
+                  mountPath: /var/loki/compactor
+                - name: wal-data
+                  mountPath: /var/loki/wal
 
             # Disable Simple Scalable components for single binary mode
             write:
