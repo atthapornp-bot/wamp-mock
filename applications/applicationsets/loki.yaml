@@ -99,18 +99,18 @@ spec:
               commonConfig:
                 replication_factor: 1
 
-              # Storage configuration with explicit prefixes
+              # Storage configuration for multi-tenant with tenant at root
               storage:
                 type: s3
                 bucketNames:
-                  # log data storage
-                  chunks: {{s3Bucket}}/chunks
+                  # log data storage - tenant will be added automatically
+                  chunks: {{s3Bucket}}
 
                   # alerting rules, recording rules, and ruler state
                   ruler: {{s3Bucket}}
 
                   # admin operations and metadata
-                  admin: {{s3Bucket}}/admin
+                  admin: {{s3Bucket}}
                 s3:
                   # Use IRSA (IAM Roles for Service Accounts) for authentication
                   region: "{{awsRegion}}"
@@ -218,8 +218,6 @@ spec:
               # Persistence configuration
               persistence:
                 enabled: false
-                size: 50Gi
-                storageClass: "database-gp3"
 
               # Single ephemeral volume for all Loki working directories
               extraVolumes:
@@ -228,10 +226,13 @@ spec:
                     volumeClaimTemplate:
                       spec:
                         accessModes: ["ReadWriteOnce"]
-                        storageClassName: "database-gp3"
+                        storageClassName: "temp-gp3"
                         resources:
                           requests:
                             storage: 40Gi
+                        volumeAttributesClassName
+                        # Ensure volumes are deleted when PVC is deleted
+                        reclaimPolicy: Delete
 
               extraVolumeMounts:
                 - name: loki-work
