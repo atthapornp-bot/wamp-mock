@@ -230,9 +230,6 @@ spec:
                         resources:
                           requests:
                             storage: 40Gi
-                        volumeAttributesClassName
-                        # Ensure volumes are deleted when PVC is deleted
-                        reclaimPolicy: Delete
 
               extraVolumeMounts:
                 - name: loki-work
