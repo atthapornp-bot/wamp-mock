@@ -57,13 +57,17 @@ spec:
             loki:
               revisionHistoryLimit: 3
               # Should authentication be enabled
-              auth_enabled: false
+              auth_enabled: true
 
               # Server configuration https://grafana.com/docs/loki/latest/configure/#server
               server:
                 http_listen_port: 3100
                 grpc_listen_port: 9095
                 log_level: info
+
+              # Multi-tenancy configuration
+              frontend:
+                default_validity: 12h
 
               # Limits configuration for single tenant with S3 storage https://grafana.com/docs/loki/latest/configure/#limits_config
               limits_config:
@@ -126,7 +130,7 @@ spec:
               storage_config:
                 aws:
                   region: "{{awsRegion}}"
-                  bucketnames: "{{s3Bucket}}"
+                  bucketnames: "{{s3Bucket}}/loki"
                   s3forcepathstyle: true
                 # tsdb_shipper:
                 #   object_store: s3
@@ -162,9 +166,9 @@ spec:
               ingester:
                 # The algorithm to use for compressing chunk
                 chunk_encoding: snappy
-                max_chunk_age: 30m  # Reduced from 2h to 30m for faster S3 upload
-                chunk_idle_period: 10m
-                flush_check_period: 10s
+                max_chunk_age: 2m   # Very short for testing - chunks flush after 2 minutes
+                chunk_idle_period: 1m
+                flush_check_period: 30s
               querier:
                 # depend on memory size
                 max_concurrent: 2
