@@ -65,10 +65,6 @@ spec:
                 grpc_listen_port: 9095
                 log_level: info
 
-              # Multi-tenancy configuration
-              frontend:
-                default_validity: 12h
-
               # Limits configuration for single tenant with S3 storage https://grafana.com/docs/loki/latest/configure/#limits_config
               limits_config:
                 reject_old_samples: true
