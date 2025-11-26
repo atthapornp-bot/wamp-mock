@@ -126,7 +126,7 @@ spec:
               storage_config:
                 aws:
                   region: "{{awsRegion}}"
-                  bucketnames: "{{s3Bucket}}/loki"
+                  bucketnames: "{{s3Bucket}}"
                   s3forcepathstyle: true
                 # tsdb_shipper:
                 #   object_store: s3
