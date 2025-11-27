@@ -71,7 +71,7 @@ spec:
                     # Flush interval - how often to send logs (in seconds)
                     Flush 5
                     # Set the logging level for Fluent Bit itself
-                    Log_Level debug
+                    Log_Level info
                     # HTTP server for health checks and metrics
                     HTTP_Server On
                     HTTP_Listen 0.0.0.0
@@ -116,23 +116,6 @@ spec:
 
               # Output plugins - where logs go
               outputs: |
-                # S3 output - only process rewritten logs
-                [OUTPUT]
-                    Name s3
-                    Match *
-                    bucket wamp-nonprod-s3
-                    region ${AWS_REGION}
-                    # S3 key format with proper tag structure
-                    # Tag format: namespace.app.pod.log_type
-                    # Example: wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
-                    # Result: /kubernetes-logs/wamp-sit/wamp-api/year=2025/month=09/day=12/hour=03/wamp-api-697fb68ddb-kt56t/wamp-api-697fb68ddb-kt56t-activity_log-20250912-032609.log
-                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-%Y%m%d-%H%M%S.log
-                    s3_key_format_tag_delimiters .
-                    content_type      text/plain
-                    total_file_size    10M
-                    use_put_object     On
-                    static_file_path   true
-
                 [OUTPUT]
                     Name loki
                     Match *
