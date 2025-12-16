@@ -153,8 +153,7 @@ spec:
                 compaction_interval: 10m
                 retention_enabled: true   # Enable retention to manage disk usage
                 retention_delete_delay: 2h
-                retention_delete_worker_count: 150
-                # Temporarily disable delete store to fix startup issue
+                retention_delete_worker_count: 10
                 delete_request_store: s3
                 delete_request_store_key_prefix: index/
                 delete_request_cancel_period: 24h
@@ -215,25 +214,13 @@ spec:
               nodeSelector:
                 kubernetes.io/os: linux
 
-              # Persistence configuration
+              # Persistence configuration - EFS dynamic provisioning
               persistence:
-                enabled: false
-
-              # Single ephemeral volume for all Loki working directories
-              extraVolumes:
-                - name: loki-work
-                  ephemeral:
-                    volumeClaimTemplate:
-                      spec:
-                        accessModes: ["ReadWriteOnce"]
-                        storageClassName: "temp-gp3"
-                        resources:
-                          requests:
-                            storage: 40Gi
-
-              extraVolumeMounts:
-                - name: loki-work
-                  mountPath: /var/loki
+                enabled: true
+                storageClass: efs-sc  # Your EFS storage class name
+                accessModes:
+                  - ReadWriteMany  # EFS supports multi-AZ access
+                size: 100Gi
 
             # Disable Simple Scalable components for single binary mode
             write:
