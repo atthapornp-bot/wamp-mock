@@ -160,10 +160,11 @@ spec:
 
               ingester:
                 # The algorithm to use for compressing chunk
-                chunk_encoding: snappy
-                max_chunk_age: 2m   # Very short for testing - chunks flush after 2 minutes
-                chunk_idle_period: 1m
-                flush_check_period: 30s
+                chunk_encoding: zstd
+                max_chunk_age: 2h
+                chunk_target_size: 1572864  # 1.5MB chunks for S3 efficiency
+                chunk_idle_period: 30m
+                flush_check_period: 1m
               querier:
                 # depend on memory size
                 max_concurrent: 2
