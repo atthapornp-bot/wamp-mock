@@ -198,11 +198,6 @@ spec:
                 - name: GOMEMLIMIT
                   value: 1640MiB # 80% of 2Gi
 
-              # Add startup delay and health checks
-              extraArgs:
-                - -log.level=info  # Reduced from debug to prevent disk fill
-                # - -target=ingester,distributor,querier,query-frontend,compactor  # Exclude ruler
-
               resources:
                 limits:
                   cpu: 1000m
