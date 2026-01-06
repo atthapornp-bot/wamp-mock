@@ -116,23 +116,24 @@ spec:
 
               # Output plugins - where logs go
               outputs: |
-                # S3 output - only process rewritten logs
                 [OUTPUT]
-                    Name s3
+                    Name loki
                     Match *
-                    bucket prod-mtl-kbank-wamp-s3
-                    region ${AWS_REGION}
-                    # S3 key format with proper tag structure
-                    # Tag format: namespace.app.pod.log_type
-                    # Example: wamp-sit.wamp-api.wamp-api-697fb68ddb-kt56t.activity_log
-                    # Result: /kubernetes-logs/wamp-sit/wamp-api/year=2025/month=09/day=12/hour=03/wamp-api-697fb68ddb-kt56t/wamp-api-697fb68ddb-kt56t-activity_log-20250912-032609.log
-                    s3_key_format     /kubernetes-logs/$TAG[0]/$TAG[1]/year=%Y/month=%m/day=%d/hour=%H/$TAG[2]/$TAG[2]-%Y%m%d-%H%M%S.log
-                    s3_key_format_tag_delimiters .
-                    content_type      text/plain
-                    total_file_size    10M
-                    use_put_object     On
-                    static_file_path   true
-              
+                    # Loki endpoint configuration
+                    Host loki.loki
+                    Port 3100
+                    Uri /loki/api/v1/push
+                    # Labels for log streams - Loki uses labels for indexing (keep minimal to avoid limits)
+                    Labels job=fluent-bit,cluster=${CLUSTER_NAME},namespace=$kubernetes_namespace_name,app=$kubernetes_labels_app,container=$kubernetes_container_name,pod=$kubernetes_pod_name
+                    # Remove metadata to reduce log size
+                    remove_keys kubernetes_host,kubernetes_pod_id,kubernetes_docker_id,kubernetes_container_hash
+                    # Auto kubernetes labels - adds all k8s labels as Loki labels
+                    auto_kubernetes_labels on
+                    # Tenant ID for multi-tenant Loki setups
+                    tenant_id wamp
+                    # Line format - how to format the log line
+                    line_format json
+
               # Custom parsers for different log formats
               customParsers: |
                 [PARSER]
@@ -186,7 +187,7 @@ spec:
               # Allow scheduling on nodes with NoSchedule taints
               - operator: Exists
                 effect: NoSchedule
-              # Allow scheduling on nodes with PreferNoSchedule taints  
+              # Allow scheduling on nodes with PreferNoSchedule taints
               - operator: Exists
                 effect: PreferNoSchedule
               # Allow scheduling on nodes with NoExecute taints
