@@ -87,7 +87,7 @@ spec:
                 max_global_streams_per_user: 0
 
                 # Log retention settings - stream-specific rules
-                retention_period: 7d  # Default fallback retention
+                retention_period: 30d  # Default fallback retention
                 # Selector is a Prometheus labels matchers that will apply the 'period'
                 # retention_stream: |
                 #   - selector: {namespace="kube-system"}
