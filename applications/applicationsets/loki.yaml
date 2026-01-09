@@ -253,7 +253,7 @@ spec:
               extraVolumes:
                 - name: backend-tmp
                   emptyDir:
-                    sizeLimit: 15Gi
+                    sizeLimit: 1Gi
 
               extraVolumeMounts:
                 - name: backend-tmp
