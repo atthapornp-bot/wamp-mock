@@ -11,6 +11,8 @@ spec:
             server: https://kubernetes.default.svc
             clusterName: wamp-prod
             awsRegion: ap-southeast-1
+            s3Bucket: prod-mtl-kbank-wamp-s3
+            serviceAccountRoleArn: "arn:aws:iam::043309326086:role/loki-s3-role"
 
   template:
     metadata:
@@ -37,162 +39,281 @@ spec:
         helm:
           releaseName: loki
           values: |
-            # Loki configuration for APISIX logging storage
-            # Single tenant mode without authentication - suitable for development/testing
-            
-            deploymentMode: SingleBinary
-            
+            # Prerequisites:
+            # 1. Create S3 bucket for Loki: {{s3Bucket}} (single bucket with prefixes)
+            # 2. Create IAM role with S3 access permissions and update the role ARN below
+            # 3. Set up IRSA (IAM Roles for Service Accounts) trust relationship
+
+            # There are 3 options:
+            # - SingleBinary: Loki is deployed as a single binary, useful for small installs typically without HA, up to a few tens of GB/day.
+            # - SimpleScalable: Loki is deployed as 3 targets: read, write, and backend. Useful for medium installs easier to manage than distributed, up to a about 1TB/day.
+            # - Distributed: Loki is deployed as individual microservices. The most complicated but most capable, useful for large installs, typically over 1TB/day.
+            # There are also 2 additional modes used for migrating between deployment modes:
+            # - SingleBinary<->SimpleScalable: Migrate from SingleBinary to SimpleScalable (or vice versa)
+            # - SimpleScalable<->Distributed: Migrate from SimpleScalable to Distributed (or vice versa)
+            # Note: SimpleScalable and Distributed REQUIRE the use of object storage.
+            deploymentMode: SimpleScalable
+
             loki:
-              # Common configuration
-              commonConfig:
-                replication_factor: 1
-              
-              # Storage configuration
-              storage:
-                type: filesystem
-                filesystem:
-                  chunks_directory: /var/loki/chunks
-                  rules_directory: /var/loki/rules
-              
-              # Schema configuration for log storage
-              schemaConfig:
-                configs:
-                  - from: 2024-04-01
-                    store: tsdb
-                    object_store: filesystem
-                    schema: v13
-                    index:
-                      prefix: loki_index_
-                      period: 24h
-              
-              # Limits configuration for single tenant
+              revisionHistoryLimit: 3
+              # Should authentication be enabled
+              auth_enabled: true
+
+              # Server configuration https://grafana.com/docs/loki/latest/configure/#server
+              server:
+                http_listen_port: 3100
+                grpc_listen_port: 9095
+                log_level: info
+
+              # Limits configuration for single tenant with S3 storage https://grafana.com/docs/loki/latest/configure/#limits_config
               limits_config:
                 reject_old_samples: true
                 reject_old_samples_max_age: 168h
                 max_cache_freshness_per_query: 10m
                 split_queries_by_interval: 15m
-                # Global rate limits (no per-user limits in single tenant mode)
-                ingestion_rate_mb: 512
-                ingestion_burst_size_mb: 1024
+                query_timeout: 300s
+
+                # Conservative rate limits to prevent disk fill (est. for 100GB/day ingestion)
+                ingestion_rate_mb: 10        # Reduced from 50MB/s to 10MB/s
+                ingestion_burst_size_mb: 30  # Reduced from 150MB to 30MB
                 max_line_size: 256000
+
+                # Additional disk protection limits
+                max_chunks_per_query: 2000000
+                max_query_series: 500
+
                 # Remove per-stream limits for single tenant
                 max_streams_per_user: 0
                 max_global_streams_per_user: 0
+
+                # Log retention settings - stream-specific rules
+                retention_period: 30d  # Default fallback retention
+                # Selector is a Prometheus labels matchers that will apply the 'period'
+                # retention_stream: |
+                #   - selector: {namespace="kube-system"}
+                #   period: 3d
+                #   - selector: {namespace="loki"}
+                #   period: 3d
+
+              # Common configuration
+              commonConfig:
+                replication_factor: 3
               
-              # Chunk store configuration with cache settings
-              chunk_store_config:
-                chunk_cache_config:
-                  memcached:
-                    batch_size: 1024
-                    parallelism: 100
-                  memcached_client:
-                    addresses: loki-chunks-cache:11211
-                    timeout: 100ms
-                    max_idle_conns: 16
-                    update_interval: 1m
-                    consistent_hash: true
+              # Storage configuration for multi-tenant with tenant at root
+              storage:
+                type: s3
+                # bucketNames:
+                #   # log data storage - tenant will be added automatically
+                #   chunks: {{s3Bucket}}
+
+                #   # alerting rules, recording rules, and ruler state
+                #   ruler: {{s3Bucket}}
+
+                #   # admin operations and metadata
+                #   admin: {{s3Bucket}}
+                s3:
+                  # Use IRSA (IAM Roles for Service Accounts) for authentication
+                  region: "{{awsRegion}}"
+                  bucketnames: "{{s3Bucket}}"
+                  s3ForcePathStyle: true
+                  insecure: false
+
+              storage_config:
+                aws:
+                  region: "{{awsRegion}}"
+                  bucketnames: "{{s3Bucket}}"
+                  s3forcepathstyle: true
+                # tsdb_shipper:
+                #   object_store: s3
+                #   bucket: "{{s3Bucket}}"
+                #   active_index_directory: /loki/tsdb-index
+                #   cache_location: /loki/tsdb-cache
+                #   cache_ttl: 12h
+                #   flush_interval: 1m
+
+              # Schema configuration for S3 storage (fresh start)
+              schemaConfig:
+                configs:
+                  - from: 2026-01-06  # Fresh deployment with S3
+                    store: tsdb
+                    object_store: s3
+                    schema: v13
+                    index:
+                      prefix: loki_index_
+                      period: 24h
+
+              # Compactor configuration for log cleanup
+              compactor:
+                working_directory: /var/loki/compactor
+                compaction_interval: 10m
+                retention_enabled: true   # Enable retention to manage disk usage
+                retention_delete_delay: 2h
+                retention_delete_worker_count: 10
+                delete_request_store: s3
+                delete_request_store_key_prefix: index/
+                delete_request_cancel_period: 24h
+
+              ingester:
+                # The algorithm to use for compressing chunk
+                chunk_encoding: zstd
+                max_chunk_age: 2h
+                chunk_target_size: 1572864  # 1.5MB chunks for S3 efficiency
+                chunk_idle_period: 30m
+                flush_check_period: 1m
+              querier:
+                # depend on memory size
+                max_concurrent: 2
+
+              # Enable ruler for alerting and recording rules
+              ruler:
+                enable_api: true
+                enable_alertmanager_v2: true
+
+            test:
+              enabled: false
+            lokiCanary:
+              enabled: false
+
+            # Service account configuration for S3 access
+            serviceAccount:
+              create: true
+              name: loki-s3-sa
+              annotations:
+                eks.amazonaws.com/role-arn: "{{serviceAccountRoleArn}}"
+
+            # Gateway configuration
+            gateway:
+              enabled: false
+
+            # Enable for simple scalable mode
+            write:
+              replicas: 2
+              autoscaling:
+                enabled: true
+                minReplicas: 2
+                maxReplicas: 10
+                targetCPUUtilizationPercentage: 60
               
-              # Server configuration
-              server:
-                http_listen_port: 3100
-                grpc_listen_port: 9096
-                log_level: info
-            
-            # Single binary configuration
-            singleBinary:
-              replicas: 1
+              # adjust later
               resources:
                 limits:
                   cpu: 1000m
                   memory: 2Gi
                 requests:
-                  cpu: 500m
-                  memory: 1Gi
-              
+                  cpu: 250m
+                  memory: 0.5Gi
+
               # Node affinity to prefer Linux nodes
               nodeSelector:
                 kubernetes.io/os: linux
-              
-              # Persistence configuration
+
+              # Persistence configuration - EFS dynamic provisioning
               persistence:
                 enabled: true
-                size: 50Gi
-                storageClass: "database-gp3"
-            
-            # Chunks cache configuration
-            chunksCache:
-              enabled: true
+                storageClass: efs-sc  # Your EFS storage class name
+                accessModes:
+                  - ReadWriteMany  # EFS supports multi-AZ access
+                size: 100Gi
+            read:
+              replicas: 2
+              autoscaling:
+                enabled: true
+                minReplicas: 2
+                maxReplicas: 10
+                targetCPUUtilizationPercentage: 60
+
+              # adjust later
+              resources:
+                limits:
+                  cpu: 1000m
+                  memory: 2Gi
+                requests:
+                  cpu: 250m
+                  memory: 0.5Gi
+
+              # Node affinity to prefer Linux nodes
+              nodeSelector:
+                kubernetes.io/os: linux
+            backend:
+              replicas: 2
+
+              # adjust later
+              resources:
+                limits:
+                  cpu: 1000m
+                  memory: 2Gi
+                requests:
+                  cpu: 250m
+                  memory: 0.5Gi
+
+              # Node affinity to prefer Linux nodes
+              nodeSelector:
+                kubernetes.io/os: linux
+
+              extraVolumes:
+                - name: backend-tmp
+                  emptyDir:
+                    sizeLimit: 1Gi
+
+              extraVolumeMounts:
+                - name: backend-tmp
+                  mountPath: /var/loki
+
+            # Disable Microservices components for simple scaleable mode            
+            ingester:
+              replicas: 0
+            distributor:
+              replicas: 0
+            querier:
+              replicas: 0
+            queryFrontend:
+              replicas: 0
+            queryScheduler:
+              replicas: 0
+            indexGateway:
+              replicas: 0
+            compactor:
+              replicas: 0
+            bloomGateway:
+              replicas: 0
+            bloomPlanner:
+              replicas: 0
+            bloomBuilder:
+              replicas: 0
+            patternIngester:
+              replicas: 0
+            ruler:
+              enabled: false
+            memcachedExporter:
+              enabled: false
+
+            resultsCache:
+              # use memcached for results caching
+              enabled: false
+              defaultValidity: 12h
               replicas: 1
-              image:
-                repository: memcached
-                tag: 1.6.21-alpine
+              persistence:
+                # -- Enable creating PVCs for the results-cache
+                enabled: false
+                # -- Size of persistent disk, must be in G or Gi
+                storageSize: 10G
+                # -- Storage class to be used.
+                storageClass: null
+                # -- Volume mount path
+                mountPath: /data
+            chunksCache:
+              # use memcached for chunks caching
+              enabled: true
+              replicas: 2 # to support pdb
+              batchSize: 4
+              parallelism: 5
+              timeout: 100ms
+              allocatedMemory: 500 # MB
+              writebackSizeLimit: 10MB
               resources:
                 limits:
                   cpu: 500m
-                  memory: 1Gi
+                  memory: 600Mi
                 requests:
                   cpu: 100m
-                  memory: 512Mi
-              allocatedMemory: 768
-              port: 11211
-              
-            # Monitoring configuration
-            monitoring:
-              serviceMonitor:
-                enabled: false
-              selfMonitoring:
-                enabled: false
-                grafanaAgent:
-                  installOperator: false
-            
-            # Test configuration
-            test:
-              enabled: false
-            
-            # Disable other components for single binary mode
-            backend:
-              replicas: 0
-            read:
-              replicas: 0
-            write:
-              replicas: 0
-            
-            # Gateway configuration
-            gateway:
-              enabled: false
-            
-            # Ingester configuration (disabled in single binary)
-            ingester:
-              replicas: 0
-            
-            # Distributor configuration (disabled in single binary)
-            distributor:
-              replicas: 0
-            
-            # Querier configuration (disabled in single binary)
-            querier:
-              replicas: 0
-            
-            # Query frontend configuration (disabled in single binary)
-            queryFrontend:
-              replicas: 0
-            
-            # Query scheduler configuration (disabled in single binary)
-            queryScheduler:
-              replicas: 0
-            
-            # Compactor configuration (disabled in single binary)
-            compactor:
-              replicas: 0
-            
-            # Index gateway configuration (disabled in single binary)
-            indexGateway:
-              replicas: 0
-            
-            # Bloom compactor configuration (disabled in single binary)
-            bloomCompactor:
-              replicas: 0
-            
-            # Bloom gateway configuration (disabled in single binary)
-            bloomGateway:
-              replicas: 0
+                  memory: 300Mi
