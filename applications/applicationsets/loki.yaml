@@ -102,15 +102,15 @@ spec:
               # Storage configuration for multi-tenant with tenant at root
               storage:
                 type: s3
-                # bucketNames:
-                #   # log data storage - tenant will be added automatically
-                #   chunks: {{s3Bucket}}
+                bucketNames:
+                  # log data storage - tenant will be added automatically
+                  chunks: {{s3Bucket}}
 
-                #   # alerting rules, recording rules, and ruler state
-                #   ruler: {{s3Bucket}}
+                  # alerting rules, recording rules, and ruler state
+                  ruler: {{s3Bucket}}
 
-                #   # admin operations and metadata
-                #   admin: {{s3Bucket}}
+                  # admin operations and metadata
+                  admin: {{s3Bucket}}
                 s3:
                   # Use IRSA (IAM Roles for Service Accounts) for authentication
                   region: "{{awsRegion}}"
@@ -118,11 +118,11 @@ spec:
                   s3ForcePathStyle: true
                   insecure: false
 
-              storage_config:
-                aws:
-                  region: "{{awsRegion}}"
-                  bucketnames: "{{s3Bucket}}"
-                  s3forcepathstyle: true
+              # storage_config:
+              #   aws:
+              #     region: "{{awsRegion}}"
+              #     bucketnames: "{{s3Bucket}}"
+              #     s3forcepathstyle: true
                 # tsdb_shipper:
                 #   object_store: s3
                 #   bucket: "{{s3Bucket}}"
