@@ -257,7 +257,7 @@ spec:
 
               extraVolumeMounts:
                 - name: backend-tmp
-                  mountPath: /var/loki
+                  mountPath: /tmp/loki
 
             # Disable Microservices components for simple scaleable mode            
             ingester:
