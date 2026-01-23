@@ -187,10 +187,10 @@ spec:
 
             # Enable for simple scalable mode
             write:
-              replicas: 2
+              replicas: 1 # TODO: set to 2 when ready
               autoscaling:
                 enabled: true
-                minReplicas: 2
+                minReplicas: 1 # TODO: set to 2 when ready
                 maxReplicas: 10
                 targetCPUUtilizationPercentage: 60
               
@@ -215,10 +215,10 @@ spec:
                   - ReadWriteMany  # EFS supports multi-AZ access
                 size: 100Gi
             read:
-              replicas: 2
+              replicas: 1 # TODO: set to 2 when ready
               autoscaling:
                 enabled: true
-                minReplicas: 2
+                minReplicas: 1 # TODO: set to 2 when ready
                 maxReplicas: 10
                 targetCPUUtilizationPercentage: 60
 
@@ -235,7 +235,7 @@ spec:
               nodeSelector:
                 kubernetes.io/os: linux
             backend:
-              replicas: 2
+              replicas: 1 # TODO: set to 2 when ready
 
               # adjust later
               resources:
@@ -312,7 +312,7 @@ spec:
             chunksCache:
               # use memcached for chunks caching
               enabled: true
-              replicas: 2 # to support pdb
+              replicas: 1 # to support pdb  , TODO: set to 2 when ready
               batchSize: 4
               parallelism: 5
               timeout: 100ms
