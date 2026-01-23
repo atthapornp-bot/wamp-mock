@@ -250,6 +250,14 @@ spec:
               nodeSelector:
                 kubernetes.io/os: linux
 
+              # Persistence configuration - EFS dynamic provisioning
+              persistence:
+                enabled: true
+                storageClass: efs-sc  # Your EFS storage class name
+                accessModes:
+                  - ReadWriteMany  # EFS supports multi-AZ access
+                size: 50Gi
+
               extraVolumes:
                 - name: backend-tmp
                   emptyDir:
