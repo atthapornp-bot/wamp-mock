@@ -118,11 +118,11 @@ spec:
                   s3ForcePathStyle: true
                   insecure: false
 
-              # storage_config:
-              #   aws:
-              #     region: "{{awsRegion}}"
-              #     bucketnames: "{{s3Bucket}}"
-              #     s3forcepathstyle: true
+              storage_config:
+                aws:
+                  region: "{{awsRegion}}"
+                  bucketnames: "{{s3Bucket}}"
+                  s3forcepathstyle: true
                 # tsdb_shipper:
                 #   object_store: s3
                 #   bucket: "{{s3Bucket}}"
