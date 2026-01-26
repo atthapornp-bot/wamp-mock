@@ -97,7 +97,7 @@ spec:
 
               # Common configuration
               commonConfig:
-                replication_factor: 3
+                replication_factor: 1  # TODO: set to 3 when write replicas are increased to 2+
               
               # Storage configuration for multi-tenant with tenant at root
               storage:
