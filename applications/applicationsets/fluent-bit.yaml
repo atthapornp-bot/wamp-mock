@@ -58,8 +58,8 @@ spec:
             serviceAccount:
               create: true
               annotations:
-                # This annotation links to IAM role for S3 access (dev account)
-                eks.amazonaws.com/role-arn: "arn:aws:iam::390844743995:role/fluentbit-s3-role"
+                # This annotation links to IAM role for S3 access (prod account)
+                eks.amazonaws.com/role-arn: "arn:aws:iam::043309326086:role/fluentbit-s3-role"
             
             # Core FluentBit configuration
             config:
@@ -101,6 +101,16 @@ spec:
                     # Memory buffer limit per file
                     Mem_Buf_Limit     50MB
                     # Refresh interval for discovering new files
+                    Refresh_Interval  5
+                    Rotate_Wait       5
+
+                # Test input for EFS CSI logs
+                [INPUT]
+                    Name              tail
+                    Path              /var/log/containers/efs-csi-node*.log
+                    Parser            cri
+                    Tag               kube-system.efs-csi-node.*
+                    Mem_Buf_Limit     50MB
                     Refresh_Interval  5
                     Rotate_Wait       5
 
