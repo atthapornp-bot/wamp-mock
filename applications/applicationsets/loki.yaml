@@ -156,9 +156,9 @@ spec:
               ingester:
                 # The algorithm to use for compressing chunk
                 chunk_encoding: zstd
-                max_chunk_age: 2h
+                max_chunk_age: 10m # TODO: revert to 2h after testing
                 chunk_target_size: 1572864  # 1.5MB chunks for S3 efficiency
-                chunk_idle_period: 30m
+                chunk_idle_period: 5m # TODO: revert to 30m after testing
                 flush_check_period: 1m
               querier:
                 # depend on memory size
