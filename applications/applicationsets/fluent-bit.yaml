@@ -130,7 +130,7 @@ spec:
                     Name loki
                     Match *
                     # Loki endpoint configuration
-                    Host loki.loki
+                    Host loki-write.loki.svc.cluster.local
                     Port 3100
                     Uri /loki/api/v1/push
                     # Labels for log streams - Loki uses labels for indexing (keep minimal to avoid limits)
