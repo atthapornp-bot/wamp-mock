@@ -71,7 +71,7 @@ spec:
                     # Flush interval - how often to send logs (in seconds)
                     Flush 5
                     # Set the logging level for Fluent Bit itself
-                    Log_Level debug
+                    Log_Level info
                     # HTTP server for health checks and metrics
                     HTTP_Server On
                     HTTP_Listen 0.0.0.0
