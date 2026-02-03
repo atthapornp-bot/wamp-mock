@@ -36,6 +36,10 @@ spec:
         chart: loki
         targetRevision: 6.21.0
 
+
+        # Improvement if we continue to use loki for production logs:
+        # - Adjust resource allocation for `write`, `read`, and `backend` components based on actual load and performance metrics.
+        # - Ruler should be enabled if we plan to use log-based alerting
         helm:
           releaseName: loki
           values: |
@@ -74,9 +78,9 @@ spec:
                 query_timeout: 300s
 
                 # Conservative rate limits to prevent disk fill (est. for 100GB/day ingestion)
-                ingestion_rate_mb: 10        # Reduced from 50MB/s to 10MB/s
-                ingestion_burst_size_mb: 30  # Reduced from 150MB to 30MB
-                max_line_size: 256000
+                ingestion_rate_mb: 50
+                ingestion_burst_size_mb: 150
+                max_line_size: 512000
 
                 # Additional disk protection limits
                 max_chunks_per_query: 2000000
@@ -156,9 +160,9 @@ spec:
               ingester:
                 # The algorithm to use for compressing chunk
                 chunk_encoding: zstd
-                max_chunk_age: 10m # TODO: revert to 2h after testing
+                max_chunk_age: 1h
                 chunk_target_size: 1572864  # 1.5MB chunks for S3 efficiency
-                chunk_idle_period: 5m # TODO: revert to 30m after testing
+                chunk_idle_period: 30m
                 flush_check_period: 1m
               querier:
                 # depend on memory size
@@ -193,6 +197,7 @@ spec:
                 minReplicas: 2
                 maxReplicas: 10
                 targetCPUUtilizationPercentage: 60
+                targetMemoryUtilizationPercentage: 70
               
               # adjust later
               resources:
@@ -221,6 +226,7 @@ spec:
                 minReplicas: 2
                 maxReplicas: 10
                 targetCPUUtilizationPercentage: 60
+                targetMemoryUtilizationPercentage: 70
 
               # adjust later
               resources:
