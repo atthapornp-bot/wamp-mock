@@ -12,7 +12,7 @@ spec:
             clusterName: wamp-prod
             awsRegion: ap-southeast-1
             s3Bucket: prod-mtl-kbank-wamp-s3
-            serviceAccountRoleArn: "arn:aws:iam::043309326086:role/loki-s3-role"
+            serviceAccountRoleArn: "arn:aws:iam::043309326086:role/loki-s3-role" # does not create yet
 
   template:
     metadata:
@@ -127,13 +127,6 @@ spec:
                   region: "{{awsRegion}}"
                   bucketnames: "{{s3Bucket}}"
                   s3forcepathstyle: true
-                # tsdb_shipper:
-                #   object_store: s3
-                #   bucket: "{{s3Bucket}}"
-                #   active_index_directory: /loki/tsdb-index
-                #   cache_location: /loki/tsdb-cache
-                #   cache_ttl: 12h
-                #   flush_interval: 1m
 
               # Schema configuration for S3 storage (fresh start)
               schemaConfig:
