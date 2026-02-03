@@ -104,16 +104,6 @@ spec:
                     Refresh_Interval  5
                     Rotate_Wait       5
 
-                # Test input for EFS CSI logs
-                [INPUT]
-                    Name              tail
-                    Path              /var/log/containers/efs-csi-node*.log
-                    Parser            cri
-                    Tag               kube-system.efs-csi-node.*
-                    Mem_Buf_Limit     50MB
-                    Refresh_Interval  5
-                    Rotate_Wait       5
-
               # Filters - transform and enrich logs
               filters: |
                 # filter: Parse log content if it's JSON
