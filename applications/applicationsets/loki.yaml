@@ -12,7 +12,7 @@ spec:
             clusterName: wamp-prod
             awsRegion: ap-southeast-1
             s3Bucket: prod-mtl-kbank-wamp-s3
-            serviceAccountRoleArn: "arn:aws:iam::043309326086:role/loki-s3-role" # does not create yet
+            serviceAccountRoleArn: "arn:aws:iam::043309326086:role/loki-s3-role"
 
   template:
     metadata:
