@@ -91,7 +91,7 @@ spec:
                 max_global_streams_per_user: 0
 
                 # Log retention settings - stream-specific rules
-                retention_period: 30d  # Default fallback retention
+                retention_period: 90d  # Default fallback retention
                 # Selector is a Prometheus labels matchers that will apply the 'period'
                 # retention_stream: |
                 #   - selector: {namespace="kube-system"}
@@ -249,22 +249,19 @@ spec:
               nodeSelector:
                 kubernetes.io/os: linux
 
-              # Persistence configuration - EFS dynamic provisioning
-              persistence:
-                enabled: true
-                storageClass: efs-sc  # Your EFS storage class name
-                accessModes:
-                  - ReadWriteMany  # EFS supports multi-AZ access
-                size: 50Gi
-
               extraVolumes:
-                - name: backend-tmp
-                  emptyDir:
-                    sizeLimit: 1Gi
-
+                - name: backend
+                  ephemeral:
+                    volumeClaimTemplate:
+                      spec:
+                        accessModes: ["ReadWriteMany"]
+                        storageClassName: "efs-sc"
+                        resources:
+                          requests:
+                            storage: 40Gi
               extraVolumeMounts:
-                - name: backend-tmp
-                  mountPath: /tmp/loki
+                - name: backend
+                  mountPath: /var/loki
 
             # Disable Microservices components for simple scaleable mode            
             ingester:
