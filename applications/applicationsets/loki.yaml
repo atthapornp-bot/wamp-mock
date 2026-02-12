@@ -141,7 +141,7 @@ spec:
 
               # Compactor configuration for log cleanup
               compactor:
-                working_directory: /var/loki/compactor
+                working_directory: /var/loki-backend/compactor
                 compaction_interval: 10m
                 retention_enabled: true   # Enable retention to manage disk usage
                 retention_delete_delay: 2h
@@ -261,7 +261,7 @@ spec:
                             storage: 40Gi
               extraVolumeMounts:
                 - name: backend
-                  mountPath: /var/loki
+                  mountPath: /var/loki-backend
 
             # Disable Microservices components for simple scaleable mode            
             ingester:
