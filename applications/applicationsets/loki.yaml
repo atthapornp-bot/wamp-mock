@@ -256,22 +256,19 @@ spec:
               nodeSelector:
                 kubernetes.io/os: linux
 
-              # Persistence configuration - EFS dynamic provisioning
-              persistence:
-                enabled: true
-                storageClass: efs-sc  # Your EFS storage class name
-                accessModes:
-                  - ReadWriteMany  # EFS supports multi-AZ access
-                size: 50Gi
-
               extraVolumes:
-                - name: backend-tmp
-                  emptyDir:
-                    sizeLimit: 1Gi
-
+                - name: backend
+                  ephemeral:
+                    volumeClaimTemplate:
+                      spec:
+                        accessModes: ["ReadWriteMany"]
+                        storageClassName: "efs-sc"
+                        resources:
+                          requests:
+                            storage: 40Gi
               extraVolumeMounts:
-                - name: backend-tmp
-                  mountPath: /tmp/loki
+                - name: backend
+                  mountPath: /var/loki
 
             # Disable Microservices components for simple scaleable mode            
             ingester:
