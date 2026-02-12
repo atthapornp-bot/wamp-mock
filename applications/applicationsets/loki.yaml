@@ -249,6 +249,9 @@ spec:
               nodeSelector:
                 kubernetes.io/os: linux
 
+              persistence:
+                volumeClaimsEnabled: false
+
               extraVolumes:
                 - name: backend
                   ephemeral:
