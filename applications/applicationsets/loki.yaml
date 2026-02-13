@@ -141,7 +141,7 @@ spec:
 
               # Compactor configuration for log cleanup
               compactor:
-                working_directory: /var/loki-backend/compactor
+                working_directory: /var/loki/compactor
                 compaction_interval: 10m
                 retention_enabled: true   # Enable retention to manage disk usage
                 retention_delete_delay: 2h
@@ -251,20 +251,15 @@ spec:
 
               persistence:
                 volumeClaimsEnabled: false
-
-              extraVolumes:
-                - name: backend
+                dataVolumeParameters:
                   ephemeral:
                     volumeClaimTemplate:
                       spec:
-                        accessModes: ["ReadWriteMany"]
+                        accessModes: ["ReadWriteOnce"]
                         storageClassName: "efs-sc"
                         resources:
                           requests:
                             storage: 40Gi
-              extraVolumeMounts:
-                - name: backend
-                  mountPath: /var/loki-backend
 
             # Disable Microservices components for simple scaleable mode            
             ingester:
