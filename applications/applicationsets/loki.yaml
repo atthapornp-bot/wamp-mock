@@ -252,14 +252,7 @@ spec:
               persistence:
                 volumeClaimsEnabled: false
                 dataVolumeParameters:
-                  ephemeral:
-                    volumeClaimTemplate:
-                      spec:
-                        accessModes: ["ReadWriteOnce"]
-                        storageClassName: "efs-sc"
-                        resources:
-                          requests:
-                            storage: 40Gi
+                  emptyDir: {}
 
             # Disable Microservices components for simple scaleable mode            
             ingester:
