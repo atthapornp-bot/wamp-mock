@@ -95,7 +95,7 @@ spec:
                     # Tag pattern - extract namespace, pod, and container from filename
                     # Example: /var/log/containers/wamp-api-697fb68ddb-kt56t_wamp-sit_wamp-api-d789ea143ef6186782ec84f0b85a25d6ff0a141c8780383340ede2f4e2f9f07d.log
                     # Extracts: pod_name=wamp-api-697fb68ddb-kt56t, namespace_name=wamp-sit, app_name=wamp-api
-                    # Tag_Regex         (?<pod_name>(?<app_name>wamp-api|wamp-crypto-util|wamp-external-api|wamp-job-housekeeping|wamp-job-occupation|wamp-web)-[a-z0-9]+-[a-z0-9]+)_(?<namespace_name>[^_]+)_(?<container_name>.+)\.log$
+                    Tag_Regex         ^(?<pod_name>[^_]+)_(?<namespace_name>[^_]+)_(?<container_name>[^.]+)\.log$
                     # IMPORTANT: Use a tag that won't match output filters directly
                     Tag               *
                     # Memory buffer limit per file
