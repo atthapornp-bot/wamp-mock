@@ -38,4 +38,5 @@ spec:
         path: cluster-config/{{name}}
         targetRevision: refs/heads/release/dev
         directory:
+          exclude: "{**/api-key*, **/secrets/*}"
           recurse: true
