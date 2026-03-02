@@ -1,0 +1,17 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: test-key-2
+  namespace: default
+spec:
+  encryptedData:
+    key: AgAFnatK75DLwW6r1BwIpe1Fu0yWeCVAQfJaEafy2AmonH7w1g2J46GLVyNEhkYQuKJ7DQ9467AvZa5Od+02g9e+hRNbz0xf73Qzu+lLe0zm520QhDT6phkzwJJTB3L4K0CsflKnF43zNYohx1ULBrpVQ44s7XhskPBS3EeUS9hStlLKWr27kKXJBRs7YUIJQBIL9i6lX4X1PsM7u9zAwwhzmXwS7G0MZJTWM6bs8/SQ1ncGJ91ib8hSDcyBWf0yxBLDNz/GaSDWVh3GLYrZl4QgHv8bMG3A5Gzt4h5am7MYXYPSdYq3mMSgMVfwFo2HM6bBfOoK4oxsAKXegr7tpeIupzMEfdGPTMrBf3Go6htjRMIIa7TSS8siS/8Z9n7Ed1d4zNuAxSClrCg7sw7Sf4GwW7ufGXBYl3IhODNnBXdx1HlBxOoIm63GW72GPwELAeMpwGKfRVu36pdGJLVSFU/yk/rYUI/Dor0yVDxnILoZhv6knSGKcS+r+IDkBlWTxqI+O5UGPrhn/UK6iXPgfRkxHp71TnQ1U9fsLPI0pH7ThIPbFGJtLg+ZTVcv5OwbCVkeJ0jZ3G+hdjmeuUg0xQj7Pet+XPQvXS/fhTCZf55pd7lydsG4/v6bilXKaM1nvyniTBlgyslKCZFXUmnHt8qNLyIl654i2wFHExY7GeprVchyYP477TBJaJcnNDOtR1uJDPbtSUx9IAfH47WzwjwsqOH8QMl/yNbtyaSZMqQotg==
+  template:
+    metadata:
+      annotations:
+        sealedsecrets.bitnami.com/managed: "true"
+        sealedsecrets.bitnami.com/skip-set-owner-references: "true"
+      name: test-key-2
+      namespace: default
+    type: Opaque
