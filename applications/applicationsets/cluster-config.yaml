@@ -38,5 +38,5 @@ spec:
         path: cluster-config/{{name}}
         targetRevision: refs/heads/release/dev
         directory:
-          exclude: "{*.enc.yaml,secret-generator.yaml,kustomization.yaml}"
+          exclude: "{**/api-key*, **/secrets/*}"
           recurse: true
