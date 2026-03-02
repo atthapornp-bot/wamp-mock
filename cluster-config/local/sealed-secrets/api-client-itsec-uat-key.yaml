@@ -2,15 +2,16 @@
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  creationTimestamp: null
   name: api-client-itsec-uat-key
   namespace: apisix-system
 spec:
   encryptedData:
-    key: AgAP/BnlgGYyluA5dUCQBu2e9z6Hsv2dxh1eQlCA9pWBDY10XdpE76w7S8ru0thQw7g62SuIMXBlkHXeijqQC1UGkzLhQhARQ0ST9bGna3ePpDAKRNKH2Rh0Fc0jMD7TIqgnZZjZGa4IlA6QAOHk3VZjehRf/N4jgEu5ND54+3h+sCozn4npqGenCgwPP4M41KzQ8GGidayJvXwM6I+AqTLMtkybZfgeTIm+JnB/M7YneYNTW8/2tOteQN4Ic85ugJt/9HA2t6SxvIREY5ltiJAoA8+LyXY6dVBeVk6ZeFzKOvIagl5zoyQzjc2m/0FBl4pMLdqtqiSAOanQXJT5yK4UvQtglrLEZMfWVRgaM08zvTrEZc/rAaSNd4D4lbrqEBHoGaaMNYQxptlElJ88Aoa3il8zS+O2RqckLQHp3dRCiNAKp5HSVZMIqPF36C61bWp44bwNALXni1mnOdheFnTWkUSzhI83nY6vN72fJOVZlHWUPeW35PQ5/X8XbFYZJNiWySDKlA+9VTJCXR9i98k2RcHL8F9PrE9pElz+p/Ql2VSucQDMFHizc80m/Vq7jck+04wl9GmUzM2u3Lp9o+reLS2l00KrPrNqVTDl8QWk6z+c+ePkWFT6rQUZxmM651LljzmgYnQYRT3DrLBpTCABnRkJ69GVSDUrYTETbdMbp6hshAS2mG9n2kkDtIY4AcM70qZyRVz0WXq1LHb7b1Bzr7rgKIS7NHUfB/zAQSNmoDCPsYv5zdrAMaxh/g==
+    key: AgAEKy/3i6AMgEnuO2iz++arCaUQXrn5dwhmGfSnK99nioxxY0srUE49n0I2zPKjjhiBZRIvH1Hl5nRSv7ygo6B7tYgSLQ6zOoWs8qN12sBaQ9YJEuWQgQlFd39QxMOExHySbRjEU94wAlN6T7zwVS11Tworq9/EGYD7yg+xkIhLhsoch0zUveK6j0Yod1ZDkijswM9uk2lXTtHQeAye6bgsUXlsG8LQ/97+akFmE1LCQWAwzPFz8ydf1Kwq4otpZxLhh+xX8aJ75gjSJFqLe9KRVvuxW8h6/yBOWks1uthjBWBybSwNZoTeYKIp2nm2hNpkX2VEen+wqBXN5cyK8HDCXl/9SpgE9xYOA+w5xpsxo9wXrwXcva4c/6YdopOrj+tx6kLhYI4PICirgMZUXxfRznsqx2ERvmDRPK8xgWvzHmqeRzJ1TJSVmSI198SfEv59axgiWALkoa9FywnAulIm2BJhjNFgOaepkqzVRe9oiUyHzme+5w6jCyHQ1SwJeFRf41hZhsnSIuAgzoxnZzevG2G8GIdm9LxI5JddtWnFHssLlDjE1byy4dwl6qPStVuuLIIWiKnRKvcgUmx5yr8TEZ6Q916tf6y1eLjXXEuDZtirO/CLMkGKdOW7h0bXY9QUuhuo6t7im16upKM+P2Qq+Y7Qj2MRSOxADGGb+Jh5LYYcQMgBglT+vSge0235WLr31O+5p7uLOt128vSl1hLmAvuQYQBEiUu6ZvYZ1F0Yk0wYYMi7KJy0q3k6Qw==
   template:
     metadata:
-      creationTimestamp: null
+      annotations:
+        sealedsecrets.bitnami.com/managed: "true"
+        sealedsecrets.bitnami.com/skip-set-owner-references: "true"
       labels:
         app.kubernetes.io/part-of: apisix-system
       name: api-client-itsec-uat-key

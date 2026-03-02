@@ -2,15 +2,16 @@
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  creationTimestamp: null
   name: api-client-itsec-sit-key
   namespace: apisix-system
 spec:
   encryptedData:
-    key: AgB53K1NNXzy2ir+TNvbNMP5gIRnygwmSMDAYF8f0IwPE73hDJWEPHrDoEwfHae17ywlLt5gemfSGmanHsasvfFX9t4MPXzCEUAJuWa0wU979+sb9wpaCexNvFVfRdu/dDfbFBfQfml/eblNYPGpcKwhrfdJO3tr6UZ2ULJ/v7L8RYoTayoViiSVqdSlI4XvjjCCbyTooaLO/w0MhzRHrd5J7siWeG8fVkP9OINp8zUJWfcqlOSOTysU8Nyjo/w+b1IC58UhYmbvAYEFUgsesI3RCAfq4AJ3VJyT51DbeuvZ3Xt6b/y0n3KJsW2PAW9z4rcMl14uJAjIOOT09P0gFbvyEYRtKcCXx47UqbglNC3XQP5Yc9UVIHemk0Mcc+ca8PvS06lFBuVhVF24B3los42VJAw2CcijqDTnM6ppSv1L0/adgsg1gbbcDuWAdQ6zVOVJkkuwitF35c8nszoGaYrMwZ2+aw0ZCYR6FxUfpQ17wS1ouKNLsSVBFNE6nBe8euNUKXHzoatxm8Xu0C5OfKyX5PFR6rpuruwP2/G5PZXDsmRXm/Qaq7s7yNjIOcto7LX1ZcOKrv8/61fu8QziI4EBeo+DMmw+UgF1UIz3QHtkYdJN3El5T+4GjhQ4QNNKF4Cu2KVRDJ8yXiM3VABxyyFXhslZd1oOGNwSWFhU/e1rrKRIgFwEm3a4RwooXHs5TSEQb8uXOokbe7sQ3DffH1cun/SnYkqWR+moZagOXau4m4DdQMNc1SSq5IVkdw==
+    key: AgClcXo4K7Cbf56A/6nQrlusOokMW94N47vmNAICYlVEbu89B/XZ26MFI0ggYHdqe1dICfTUlBJj8EzbyKjAUOcRD+sntiO3Otw1WK/is4+/U6o9cxEIZnzvRaKkrAJadxSiW+p719zXED/ka27fyRgzUDs0VCpGYBYg6d198zWdHB5r1VZPXSk6ba1fERsNB0brVzqtwnw98UW6xXmgHTdAdl5i4dS5twJkaj4hOebOPsk2xAgH8mk1LVXP5O51EbiO7Bggt94jekHuoXA4AZtSD3v4PQgfNvWD1y4xicOpF78Bt4BzphcI92MiqBE/NaBQyygZoa4f/EDGYCDDeXme6TZdFSNwxMkUJg7QikTpAuoGXawApjI8E/DSt8lrKy5ThJ36hWZBWiZ8evWPb/7ry/rQG6eMkG27E7ISVv2tB+tzBhfdAz+6eaO09UFBbqx1Sh+2Y19oJu66NTulz7A60tzaX79ue2AXH64TYRBZuhz67qbSzScUNtZRCsVwjxB+i7RwedagqS40WLO1jacjymAhkb57peL66CEuF/JE5Lfj/+3kcU8NyyHD8FV1mwzR69EW49AWaY0sqbEq4IawRLcVIQ56Z3mulo0DVsVn4hos8ATfh1dVtYfZm++JFlHoqNRXjdaxhXyM5Xk+Q6m5MKJogGNA2OHtvwqs6xHRa7TxuzO7gg8s4vjKZy9OHbh0bZ5v3oIeC2cUA+zkdGjX/Nvz4yarSLU4U9wzhHuTmwwnCOUJZKEl5DAwjQ==
   template:
     metadata:
-      creationTimestamp: null
+      annotations:
+        sealedsecrets.bitnami.com/managed: "true"
+        sealedsecrets.bitnami.com/skip-set-owner-references: "true"
       labels:
         app.kubernetes.io/part-of: apisix-system
       name: api-client-itsec-sit-key
