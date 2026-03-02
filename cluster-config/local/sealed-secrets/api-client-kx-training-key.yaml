@@ -6,9 +6,12 @@ metadata:
   namespace: apisix-system
 spec:
   encryptedData:
-    key: AgBFoOyvgFcFVnkVJX9jBk86un+g+/3uyENRfMdiRFNpFYWNcbe0/4w2bJ1p+5TKJXxJV+cyn2CAAUxbh0IC4SxyosbAeM/EMRuQp+up7yCq99T2CwcJQieNlvgYAwpXDLpcTsypxLW854R/viU4peD7xrH9vtXI/0bN/6W8p2M68mWHjDykObIHQ4l5JD7VltGnY2skLQN32LNsBrrjf0X0rWd+ZtgaW6hjMpBBu/qLu5FTW/A7QOpfd2IyhqkyXRi6DBeOI0bPAqELLjmijDse/SyVRj4yX7lc+clc2ZHZm+1aNOdi96hhsddy9WFLHV7kYKMR6GJPh2gmzJSbOitgpBaGeSyyzwGtmw+bTIb8hQIThClIPuvu8+RUgHEPQiaYChGBwi58vcJWwCp20N8pmTMMkRietbevfyDmTYzK548eRImrxEsgP3E6MkZJLkAs6HysUs2/aGd1k1dN44VTjfSp5wZfSFLOM9ZF2plWRA86yiuzpSkUNyBHcOmJmg1THTHoPaaMZD+cmQRJAaBOazroxAxjXM1ixMSYzjpNq7qB6bl4XOE0SHSaH9D29Zb8MiU+lTWwYCLftotpDvn5H7qvop5yka9xOfSxNoe0Pd20vvJ60f3UeMIfiGFp6ozvDycyA628f5ToamZDO+fX0423fxbm7Hi+xcYGpclMmpEhiaQAsIXM3hzP58h7ZNiLQArRpsQiIIY2Bcq+9WuDIBptDLNALHJe/+Q0V21H
+    key: AgC16YJn0tRg49LrdlP6UVFYzfccozN4JWOT3mY1zZVnteTFyYPNDexQOtI0DSFaYyW+EnXvtA3MKHSSY5XMMrkH2MTkC0hKRlt85kBugOOnXxc17lrwnnSAq22nRIKaP882vMIMczbU7JISNwYG6jRnA2XuuUkK1IiF4oTPKiEKsNi8jVpqcwkXGgDIb5RGjN4CGdeUrfJM92/s3+qkiqSUP0hRHkjQTALufeD2LHxk/nS6NQYLPpI3z2dcBkhRhB2s+cjJau/GU8bypTo3fP2ZPCvBCp5p/ofbL02oROgVnuqaDwLJnQ2ecDmaAhbDLikSN/Rp+iku//uBdgjfmHcPmQw+Eiz8E5aS7xpqjGIFu7yHmGkzEsmrAOPi3JXMoQ3Q77GEo4p09+1X5mLObNN+LHSyujvYFEo1Z8SB6crwo1u9JyE1BZTpyD39SEo2IclbnI9JInKckPtsjwOCMtqGsRhBH7ovPRZbiJOw0t+x5UVVUbq8YiDy73YbtQwC2/NAkPOI26mXqE9PeJMKbwkg2uwa/fBA3N/x281wdesClkKBdGgoN6+6+64UpERztO7U66UOFxAMXw39yyHjnlGzV4VZNyopfT6kreGF2/7a0T+7Z8tDfYEJQOHl+2CAbdV94i+fdMzMOcEAqi1YFmlv17LThzb5Wh6zOD1XjlNGBCWJTY+8+rS9dIJ9/lrUf/1rDwjGhO1eeSD899J6woTzvvHOqO+V5LILCJkujdYK
   template:
     metadata:
+      annotations:
+        sealedsecrets.bitnami.com/managed: "true"
+        sealedsecrets.bitnami.com/skip-set-owner-references: "true"
       labels:
         app.kubernetes.io/part-of: apisix-system
       name: api-client-kx-training-key

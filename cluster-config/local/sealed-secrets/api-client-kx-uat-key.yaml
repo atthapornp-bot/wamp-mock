@@ -2,15 +2,16 @@
 apiVersion: bitnami.com/v1alpha1
 kind: SealedSecret
 metadata:
-  creationTimestamp: null
   name: api-client-kx-uat-key
   namespace: apisix-system
 spec:
   encryptedData:
-    key: AgCkRdrSjXEhdaWqQiXte9O2jqojCWTY1TL5bu5ElPIVBfzjkif7IF60I6wB5d4tm3oQ475xe0R70CK31XEN02guG/ULTYIYhC87fdMBjDRdaUuQK86Q/obFCvo0OSELJtI6U36qZUH23QSpGuJJ2yno49paJaoSjO8eQpABxe+5YK83W1EKRB61/QV7kfuFFZyDp5yy9GfrN5TeWNR4i+o5N1p5uoh0o42bwakW4I+DmqHFgk/hAZNwADJvdzwBnoJ567EBqhuGmOWoQ/XS6dLxYFmJEVSkBdigQ8t0TwDQs1vwuceYBTA7qASswTwnd3491G1G7r3zDWF4E4s+xa2aXSdVDaJZXg8sywDbCI/Iwn1j74GEJqE6/+GZf6WDdx9snPky6g9ehMJhX6UjkEYUzRg3yVaST1/BF4+dJxLZaOXkqtr5WaqG0kczDJY0JXmQ/Fgmv9f7vXAhzoa7er2ywmZPmezqtYClifYax69tQuc7FNrCwrJ14lcdKmVR1HWQxqJjZeLu09roLMtrF6r8BXLH1y3w0vrSYTdfYYVp65B3T99GZBkrktCycWKEWBTChySAXxvrhXHWqSWpMMWpmtOMaa6fVbeWR7wypm91S4lpVq+/RL3oxRUsUXMoK20UB50+9QrfvwZITDs3kqVhJqHoIzDKRAuyRbCSd18VkJ7+uJVRwl+ldCKxw+oQo8cou0UXYA++nar6o3aAK1BzRcd+LyAiGxwbC1ukwyY9
+    key: AgCnXxdz7hs5td/jmNCfK/gokkpBVvXb25WFdrXGS72C9hUpBfF0V3rIEjDIgPco23EJcSV6XZpmcKwxujVGcmXbQo0RJbpYSeHmodaPX96ReulB/tQGS7f1k77OLCiywjFvcVA50IIFAwMiS4leZvQT03uppLPVG5I+/LV1CXkBTZk5lAA40KJyXA8voPnh7iXzJx25BlzeGtcJkLypR9WfyP4oHRSfex2pg2GpKeCwCucuOqnJ89lnzl66RBvvXdtDxzdL/10NqrWUJ0jKX6pJKtdvbItbjoLFUA/TzEgp1bwGERNuhj9OmXwm6glXBXelOWRqNQHoIdwh7waEBGLiGcz2kk+t5gobx6dLq06VelgIgYUwUvNdOKnXp/wkaDY58TpQfZYYZ7dP/QWm00dXuYw4CQvXWaFpfHdgMwWinKP0yUxKUzgvSjwOnnilwQV0WkFiDTelLS8xORaV8EcaC/d6knizGJ88oxYc3e6SVS1F0Stuih1qdGflPvowrRNW4ZbGs7NvDDDY+w/cLqr8pYei5tt6zeEuDEORdn+T/YoM10U8xMn6FhyiXh75+f7Wnl8ZTOYJhURE8AuqEoCtjkGFQHC1bl69+mjw6BBQS+gyMXMBo2CS4aezwP56McEfsrxveXi8z2Ndz25R8AAMNcdLbL6v7dd33MGNR03gWhH0Gav2r4F1s8piVuUCfSAgrKB8k8XwdGfMwoAilFULW7Hwf7PIH7cMH8m2VC6F
   template:
     metadata:
-      creationTimestamp: null
+      annotations:
+        sealedsecrets.bitnami.com/managed: "true"
+        sealedsecrets.bitnami.com/skip-set-owner-references: "true"
       labels:
         app.kubernetes.io/part-of: apisix-system
       name: api-client-kx-uat-key
