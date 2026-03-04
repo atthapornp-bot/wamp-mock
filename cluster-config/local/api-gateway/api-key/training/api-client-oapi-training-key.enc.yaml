@@ -1,0 +1,20 @@
+apiVersion: ENC[AES256_GCM,data:Cbo=,iv:1TA17cCoPhBdQYbW1Djo8FCG3Q3TNVzL6zp+LCy3jUA=,tag:7ZEnepZCILMAjyVUrQ5LGQ==,type:str]
+data:
+    key: ENC[AES256_GCM,data:bDctBs4j0k6ZlAE9sXs6gGFa45w1kxP2sMavCaOrI6R61JRLmRjg2fSJ8Jc=,iv:44BfENN0f8NCUJnRkFlYCeTJkvh9S30e9JbggLHwqQA=,tag:Z2jOBdJTFVZqfbcnkQT+7w==,type:str]
+kind: ENC[AES256_GCM,data:euOwmeA3,iv:YZo8+IoE1yDw2yQFhRrYhlu6iDcQDk9OY97X5ZI28P8=,tag:tHcUzn2I3l3Eaeh/F1q5cw==,type:str]
+metadata:
+    labels:
+        app.kubernetes.io/part-of: ENC[AES256_GCM,data:aW2c7J7A3xCsq85vhg==,iv:mbdPM3ul1rMircZD0ZhyiVjgdrpBCRv4owJu8Wt0qrk=,tag:9MyeZU5AdM0G7CteHPV7hw==,type:str]
+    name: ENC[AES256_GCM,data:bmxrOpsinqfuvX81HnAYwHklTzRrzk10W2caxA==,iv:HSPFfKbjX6ftBOBxc6hJyT3+PXekfV1v1z3dXWdRtOc=,tag:RLq1dubdDvpTsNRgGFycxw==,type:str]
+    namespace: ENC[AES256_GCM,data:fUJptn57y2U12cQeRw==,iv:yF45uCeXOnncgUEDTI8VaEVIUMOOdyWt0YimnXmOUeQ=,tag:jcEeOb/WpUAN/iYg4+7ylA==,type:str]
+type: ENC[AES256_GCM,data:CUa8g0t1,iv:JSY8lO1XPnCOdp8bjDMWVvR3cocKOccTXs62eSTxx7Y=,tag:geBbhu/Ta02g8gZ6KH84Qw==,type:str]
+sops:
+    kms:
+        - arn: arn:aws:kms:ap-southeast-1:390844743995:alias/wamp-nonprod-argocd-sops
+          created_at: "2026-03-04T08:45:05Z"
+          enc: AQICAHgH4Wr/3VKoVyfq6RtObvOwcY6Wk9CUP6jNcmZQ0oP+HwHGfS0ksnhdytD/oKflpa18AAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMEZSo+W5eG2xFeuixAgEQgDvWkWRRl7e6gVNSeQnibJjWsIs9IcAZ/OUiDBmpbB7qUo6q5KbzSEXLtnDqUpLY9q11PpYtWMZ6w7EsbQ==
+          aws_profile: ""
+    lastmodified: "2026-03-04T08:45:05Z"
+    mac: ENC[AES256_GCM,data:IrlDkYrRyOO+P0jpW4x9KXuB82gJE1bjQpbqiKLG5Pvps3k+3Ps//kBcxs4bVuegJzgu5ZiLaF7bOJDREdXzURj+2tWcfWkCLvQ08g7L8E7U0tPOReUagxBJlxZFbvxiRnUplGDioqtj4KOuiAUYN05vfmBWNhhYijaEpgg6IU8=,iv:H49zATe7DSW4vUYIWuUo0/kxAsmreGcOEqOIAyJtWxM=,tag:flQFpinwUtA0SaT7s5ZSDg==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.11.0
