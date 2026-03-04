@@ -1,0 +1,28 @@
+apiVersion: ENC[AES256_GCM,data:sMU1qRN+hvlWP2YRbCKwfpHQbxY=,iv:mKdP5t5+4Cy95JREWlaMOeTxSxCCwvfmax0wgYuZd9g=,tag:aiaHZCokUVUIb+G3JM1pdQ==,type:str]
+kind: ENC[AES256_GCM,data:TM3iorHFY1Cz0tFB,iv:fGED3JHVG+6OqvbaNlhM+U/kxRwIUeBtbVle6vyq6YY=,tag:lqDqXM+QPdioGbaw0qEngw==,type:str]
+metadata:
+    name: ENC[AES256_GCM,data:kofSuylpobN7SZ9/6VJ85SimFhMC,iv:jyV7ESdwiS7w3RGwaSPvX0L8tIxZdPosZIik2/nAInU=,tag:mB93vlFSwFLNSkYGHoc1dQ==,type:str]
+    namespace: ENC[AES256_GCM,data:iUNYoIzrO17H/RXWbw==,iv:1wkauU0pGXyoug9lDn9hvdnY5OmKfuTESrdZ0B46W+s=,tag:Xq8NioAy3jfAmf2U5wuNpA==,type:str]
+spec:
+    encryptedData:
+        key: ENC[AES256_GCM,data:LlocROhylI4XAHtqbF2eEI8AdZJsvCliMX1Bogv9mq69kh8hGs2wR2AOqE/cliEi8kp3aiulUiYfV026G4lyYw71c6LBQgrzYT34Nvj0sMsaV/BBT97ToxZEDznDbXK0LLpE6sXbUtvDTWG2j6vw4Vr8Zddymd1mR8+CJhIVPRx+yri6KTFoNa+UL3kkJXMjB/FWncgERUI9+cYdVYk4kKHijRs6Ph+UgG/166Qv1ihAqgHkBW/6JTgWAfCPnYiWxNf+K4DH7yPlvYYh8z8yecl8VXlNKj7o7kKZelCgol0wWVuGjwvXxe5mxKnIbdDPhTBrK/DQ2OHeyGvtI12mOhk70kPspnSNCuSd11p++qYFiZxDm94vDy/bgzmcMRQL5sCNILrIY6EaZOpBbnZraj7J20GPBT6U9lN21wvGt340DQEDi4n4kV7aRq7QyMfTxZN+0PPVQtFtAbbEKYCv/rRd17DA1M9NVLKW+soNuDUYSEPKqyHRlolRA2E6NhsZbrbpz5+AAwr418ACoIUG8kaYSc65hNLeIWbpyehgCTT5imQ9dsexiz5VFVrYbL6sUaVWTNTP9fPCEucrKGelKIMeVMKUPDMrzbLc+sbSX8TPc5AtUGt4o6hTRCLRYUtsUw4HNnwRyU2pg2iofQKFx+d1r4xIGFlu5CngtTpXvAtixSMY+j/LjSj9DFR4t7+xryT2wxNiArVz58Ie7hEi7xTgVZy5lurBydNjR7mLq6KCtKfah+394tuPvDTna/JdonIHHfO/p2Detu+R2Xi3xQEDnoJUdNHeQ3mcYWww/LL80bm2p/soBmYr3cic58AJmo5Xff0QuwxP+F3b+4biRRq1YbmFcccY2yd5B0AtEzW+RLlF9yeO4q4eo9g1GFa3mOngT+BS6osz4dHIeDgEuppfUMD0lHxNGb5u7VXV8rEmzZaimVrfSux20iWJTuWc5uMK1ouMagdlee5lHNdYgZECBRcJFIW7pkhMRrqSdTc=,iv:b1cqV3fYf9pfGiaZ8WRNlW2kyE0hrU4W51THT96nscw=,tag:baaSQmytJHiHVQBK6mH6gw==,type:str]
+    template:
+        metadata:
+            annotations:
+                sealedsecrets.bitnami.com/managed: ENC[AES256_GCM,data:ieIANw==,iv:0RL8mglMRbydYCa9hvi6atsXctgnxqq5BmLGZYUMSGY=,tag:mNaHudebkRzi2gqKH2Y6tQ==,type:str]
+                sealedsecrets.bitnami.com/skip-set-owner-references: ENC[AES256_GCM,data:nF6LjQ==,iv:+S1WFZ+4RvrYRREQwSRTUfT6L8r/wEhaRoGmemDvudc=,tag:fdC8tKMbXpbN0WXOh6dBxA==,type:str]
+            labels:
+                app.kubernetes.io/part-of: ENC[AES256_GCM,data:W2HD2XAH0BoFOKxK5Q==,iv:HWPnhcjKU3315JlpXUTtiwd+F/h0KRLSCOZT63CC0i0=,tag:CyYb0+wcW1JrYgye1nWQcQ==,type:str]
+            name: ENC[AES256_GCM,data:KXBMy8P+yezHlE8fpCzFSQHvg02G,iv:xHt/5n5jkU28ZUcNd/FsJLyZGdLuxVEOYCTjMrMnTZw=,tag:KQiktPt/3sdNPi4SsPnKDQ==,type:str]
+            namespace: ENC[AES256_GCM,data:Uy/SHCyi7oCe4UEcyw==,iv:C7xhhx2yvgk5snhPlmKZZWj8eqtgzOkvmraGZPMxMOY=,tag:v/56Jrohe0oK5zAqenKOPw==,type:str]
+        type: ENC[AES256_GCM,data:UVVCjb7o,iv:P6/VnNs3YinI7pCWtbHBDIGwc45xmlNAkywDl50vcnY=,tag:DG2m1B0QfqA2NN+rPstThQ==,type:str]
+sops:
+    kms:
+        - arn: arn:aws:kms:ap-southeast-1:390844743995:alias/wamp-nonprod-argocd-sops
+          created_at: "2026-03-04T04:51:40Z"
+          enc: AQICAHgH4Wr/3VKoVyfq6RtObvOwcY6Wk9CUP6jNcmZQ0oP+HwHw5P1CF3jPVgBVkCr6skcZAAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMd10Dw2UJ2dLbWkOiAgEQgDt0xO82ALjxDAc31q8E8dMYqOu1ImrO6SlhIk5YLV+kpEexZXUEalA+MfdSZUeT/dJ5Wj7r3LOQ/w+sAA==
+          aws_profile: ""
+    lastmodified: "2026-03-04T04:51:40Z"
+    mac: ENC[AES256_GCM,data:AUBRrnMyvjxBesl/PWTSwpFk/bgGBfZjh0g+pgfRqSW7cdrAs6NcjvvhHedn6ELjrtPa13IF48P/xGKFOhpQlrvrIaimoDmrkKePZ2CfW0qvK3qTAAFyf4VoGBf2wboqDCWrHxBVol4mpj3Q0KuY+f/kYyGDlFvOQ4+73E3LHzQ=,iv:LVGMeRUAeQDZH1NvZVcyuAOI54LL8QSiNfBcjNDD7ok=,tag:8k6pxELXD9Zl/2ugCxkBrw==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.11.0
