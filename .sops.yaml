@@ -1,0 +1,5 @@
+creation_rules:
+    - path_regex: .*/secrets/.*
+      kms: "arn:aws:kms:ap-southeast-1:390844743995:alias/wamp-nonprod-argocd-sops"
+    - path_regex: .*/api-key/.*
+      kms: "arn:aws:kms:ap-southeast-1:390844743995:alias/wamp-nonprod-argocd-sops"
