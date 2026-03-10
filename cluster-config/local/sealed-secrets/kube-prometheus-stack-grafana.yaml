@@ -11,6 +11,9 @@ spec:
     admin-user: AgBXOUa8WDwPVpF/bVZNeGW6FulWPxkY1ri6JCRrXweoMqZZvy2hO1Fqhs2QhFFfYAzkDDAImisxNRee9TprhILVZjnzK+lAsT2JoWztt4RTNOGEJ9qsdwJSiOSrCqc9KPcIgmtDpe/DSJjGAExh6JC906Rzhx1TT/1YFjKJXxAzQBtEAmGIyVuXop3LSzZ3y6qaBan4WXa/JHZBQX5bWDzMalULlP8RKWUy2EXLeNEprHM6UHQwA87ygr1OIR3EdVzbU0phly7uxSL7R3AQd5pfxtSZCkRHTlDN5sTTlPKxppTlB435ktnzGH85QJJAh5FORw949GmJCisdprotLP7m6BzNtFcg9vV7FT2azdVBc2SjUwfz2xaWBM1OM0qR+ea2BxzGMcmIs66bIldz4IBN3iBGtdWd40aCAahIb4etEMrToALpLGG5Qv4uuCrm1T4ZnxBTHN+VHrdOGizgi80HWcL3jXdcgzeRKcVKJ1UDFzdzCoWME6PcwX/vZZx4p31qNuQB0TKNz90vGjDHZWZVdDyT6kqpPCnLobORExO04hd0gagww5G2hZuOFWKbm7L2mKxhC220bFVvIVDU3YfTXSytYM6QJW48fJ7b4+q3AmoeT2/mDwg/lSYNmMOFmH+fegnome+QpD7MClHUDUJvqrxrl5L/4VaBJIpIyCJxJdUw/FTW6oqYTVj2UaMLcQWGw6yX
   template:
     metadata:
+      annotations:
+        sealedsecrets.bitnami.com/managed: "true"
+        sealedsecrets.bitnami.com/skip-set-owner-references: "true"
       creationTimestamp: null
       labels:
         app.kubernetes.io/part-of: kube-prometheus-stack

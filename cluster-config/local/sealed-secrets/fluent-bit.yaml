@@ -11,6 +11,9 @@ spec:
     AWS_SECRET_ACCESS_KEY: AgB1p4uL6c9JXa71f54uP3ht3C7Q9Jh3Yv6/wQZ0dbQ0aE5J7eLJ/Z/Mqlz8n6enzUawJXuqxZ4/Fi+3WI+1KF4BLPyoDaVjUq8rhhYdTegqBOjpsrtZi4+dsKT0PlqMu+Vu0QjPU4Pqr3VmhV2q6Lm8z84IXfOVKPQj077X1L4bT/2DSO7Mi+DAAKhGtYIYihfTZOKgnEY+wrFyFtkfRPvzbXQmI/36fGmYEOs+eGs6J+k3RJBvZkghRrf+jeRgrkbe3RVQMCB7Ns8SH21lakuiU5+I8Dr1gn+NbIwXD0N/P52q2aPXFHnBBIe96pCr6Dp5YR8AYSo+W3W2G6KkgtxB8K7RTDS78jR0jJsBtUTimnGdo//+fE2aJCaR+WqjkVoWgsTBqQBom5evPCMDHTeNh0XEKsVkey+njv+JCvGx6BXe+IX+/YLveYXINMjUkLZqTOPlELa/8Pe0he/usZzzUqCxvlFRhGF85X9AoPQmggOubFT88IrJRJX0Pk8PPOJT+Bse7hPHewl+RhnMjNQ06NCBIRUw7hJRZ+mkoBkoueWPJHzlDiVtikPp40A8nGfGBjceXMApFWPBTy//ARxNuK/vq+owTBmYgdaZwuLPUjRS+MxXdXIpNN4fGgMTx/gGVuwn7o4Ivh+l7lXqTlgkG4YmxzZGGtRO48cZQiGfOgK3bGn4UcnZ44laAXbfC44//tKWq7+kjclKHnii8rAJhHDvsZfc/vgAfx9dWo7IDNGvqcqkpb+/
   template:
     metadata:
+      annotations:
+        sealedsecrets.bitnami.com/managed: "true"
+        sealedsecrets.bitnami.com/skip-set-owner-references: "true"
       creationTimestamp: null
       labels:
         app.kubernetes.io/part-of: fluent-bit
