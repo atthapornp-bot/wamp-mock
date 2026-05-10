@@ -34,7 +34,7 @@ spec:
         server: "{{server}}"
 
       source:
-        repoURL: https://gitmtl.muangthai.co.th/mtl-digital/mtl-wamp/gitops/kubernetes/cluster-ops.git
+        repoURL: https://gitlab.com/muang-thai-life-group/digital-solution/mtl-wamp/gitops/kubernetes/cluster-ops.git
         path: cluster-config/{{name}}
         targetRevision: refs/heads/release/dev
         directory:
