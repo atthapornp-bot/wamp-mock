@@ -1,0 +1,161 @@
+datadog:
+  site: "datadoghq.com"
+  clusterName: "wamp-nonprod"
+  apiKeyExistingSecret: "datadog-secret"
+  clusterChecks:
+    enabled: true
+  orchestratorExplorer:
+    enabled: true
+  operator:
+    enabled: true
+  kubelet:
+    tlsVerify: false
+  containerExclude: "kube_namespace:.*"
+  containerInclude: |
+    kube_namespace:argocd
+    kube_namespace:^gitlab.*
+    kube_namespace:wamp-sit
+    kube_namespace:wamp-uat
+    kube_namespace:wamp-training
+  apm:
+    socketEnabled: false
+    portEnabled: true
+    port: 8126 # default
+  otelCollector:
+    enabled: true
+    ports:
+    # Default GRPC port of OTLP receiver
+    - containerPort: 4317
+      hostPort: 4317
+      name: otel-grpc
+      protocol: TCP
+    # Default HTTP port of OTLP receiver
+    - containerPort: 4318
+      hostPort: 4318
+      name: otel-http
+      protocol: TCP
+  # otlp:
+  #   receiver:
+  #     protocols:
+  #       http:
+  #         enabled: true
+  prometheusScrape:
+    enabled: false
+    serviceEndpoints: false
+  dogstatsd:
+    useHostPort: true
+    nonLocalTraffic: true
+  kubeStateMetricsCore:
+    enabled: true
+  processAgent:
+    processCollection: true
+  networkMonitoring:
+    enabled: false
+  gpuMonitoring:
+    enabled: false
+    runtimeClassName: ""
+  logs:
+    enabled: false # Not yet buy this service
+    containerCollectAll: false
+  nodeLabelsAsTags:
+    failure-domain.beta.kubernetes.io/region: aws_region
+    failure-domain.beta.kubernetes.io/zone: aws_zone
+    eks.amazonaws.com/nodegroup: nodegroup
+    kubernetes.io/hostname: hostname
+    allocationchannel: allocationchannel
+    appname: appname
+    appgroup: appgroup
+    team: team
+  podLabelsAsTags:
+    app.kubernetes.io/name: app_name
+    app.kubernetes.io/instance: app_instance
+    argocd.argoproj.io/instance: argocd_app
+  namespaceLabelsAsTags: {}
+  namespaceAnnotationsAsTags: {}
+  tags:
+    - "env:nonprod"
+
+clusterAgent:
+  enabled: true
+  metricsProvider:
+    enabled: false
+    useDatadogMetrics: true
+  admissionController:
+    enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 256Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi 
+
+agents:
+  priorityClassCreate: true
+  priorityClassValue: 1000001
+  tolerations:
+    - key: "workload-type"
+      operator: "Exists"
+      effect: "NoSchedule"
+  podSecurity:
+    apparmor:
+      enabled: false
+  enabled: true
+  containers:
+    agent:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 256Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+    processAgent:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 256Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+    traceAgent:
+      resouces:
+        requests:
+          cpu: 10m
+          memory: 200Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+    systemProbe:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 200Mi
+        limits:
+          cpu: 200m
+          memory: 512Mi
+    securityAgent:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 200Mi
+        limits:
+            cpu: 200m
+            memory: 512Mi
+    initContainers:
+      resouces:
+        requests:
+          cpu: 10m
+          memory: 200Mi
+        limits:
+            cpu: 200m
+            memory: 512Mi
+    kube-state-metrics:
+      resouces:
+        requests:
+          cpu: 10m
+          memory: 256Mi
+        limits:
+            cpu: 200m
+            memory: 512Mi
