@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: datadog
+  namespace: argocd
+  finalizers:
+      - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/name: datadog
+
+spec:
+  syncPolicy:
+    # automated: {}
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+
+  project: cluster-ops
+
+  destination:
+    namespace: datadog
+    server: https://kubernetes.default.svc
+
+  sources:
+    - repoURL: https://helm.datadoghq.com
+      chart: datadog
+      targetRevision: 3.213.2 # appVersion: 3.213.2
+      helm:
+        releaseName: datadog
+        parameters: []
+        valueFiles:
+          - $values/applications/applications/datadog/values.yaml
+    - repoURL: https://gitlab.com/muang-thai-life-group/digital-solution/mtl-wamp/gitops/kubernetes/cluster-ops.git
+      targetRevision: release/dev
+      ref: values
+    - repoURL: https://gitlab.com/muang-thai-life-group/digital-solution/mtl-wamp/gitops/kubernetes/cluster-ops.git
+      path: applications/applications/datadog/secrets
+      targetRevision: release/dev
