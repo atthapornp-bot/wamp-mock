@@ -1,0 +1,57 @@
+apiVersion: opentelemetry.io/v1alpha1
+kind: Instrumentation
+metadata:
+  name: wamp-instrumentation
+  namespace: opentelemetry-operator
+spec:
+  nodejs:
+    env:
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: http/protobuf
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: 'http://$(HOST_IP):4318'
+    - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+      value: 'http://$(HOST_IP):4318/v1/traces'
+    - name: OTEL_TRACES_EXPORTER
+      value: 'otlp'
+    - name: OTEL_SERVICE_NAME
+      value: $(DD_SERVICE)
+    - name: OTEL_LOG_LEVEL
+      value: info
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value: >-
+        service.name=$(DD_SERVICE),
+        service.version=$(DD_VERSION),
+        deployment.environment=$(DD_ENV)
+    - name: OTEL_TRACES_SAMPLER
+      value: parentbased_traceidratio
+    - name: OTEL_TRACES_SAMPLER_ARGUMENT
+      value: "0.1"
+  go:
+    env:
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: http/protobuf
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: 'http://$(HOST_IP):4318'
+      - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+        value: 'http://$(HOST_IP):4318/v1/traces'
+      - name: OTEL_TRACES_EXPORTER
+        value: 'otlp'
+      - name: OTEL_SERVICE_NAME
+        value: $(DD_SERVICE)
+      - name: OTEL_LOG_LEVEL
+        value: info
+      - name: OTEL_RESOURCE_ATTRIBUTES
+        value: >-
+          service.name=$(DD_SERVICE),
+          service.version=$(DD_VERSION),
+          deployment.environment=$(DD_ENV)
+      - name: OTEL_TRACES_SAMPLER
+        value: parentbased_traceidratio
+      - name: OTEL_TRACES_SAMPLER_ARGUMENT
+        value: "0.1"
+  propagators:
+    - tracecontext
+    - baggage
+  sampler:
+    type: parentbased_traceidratio
