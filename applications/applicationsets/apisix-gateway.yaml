@@ -83,11 +83,31 @@ spec:
                 - http-logger        # HTTP access logging
                 - loki-logger        # Loki logging for structured log storage
                 - request-id         # Request tracking
+                - opentelemetry      # Distributed tracing
+                - datadog            # Datadog APM/tracing
 
                 # Advanced Features
                 - proxy-cache        # Response caching
                 - traffic-split      # A/B testing and canary deployments
                 - fault-injection    # Chaos engineering support
+
+              # Plugin attributes for configured observability plugins
+              pluginAttrs:
+                datadog:
+                  enable: true
+                  host: datadog.datadog.svc.cluster.local
+                  port: 8126
+                  namespace: apisix
+                opentelemetry:
+                  enable: true
+                  resource:
+                    service.name: apisix
+                    env: nonprod
+                    version: 0.1.0
+                  collector:
+                    address: http://datadog.datadog.svc.cluster.local:4318
+                    request_timeout: 3
+                  set_ngx_var: true
 
             # CRITICAL: Disable the ingress controller
             # This is the key change that resolves the architectural conflict
