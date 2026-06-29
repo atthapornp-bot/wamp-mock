@@ -7,31 +7,6 @@ metadata:
     app: apisix
 spec:
   plugins:
-    - name: opentelemetry
-      config:
-        sampler:
-          name: always_on
-          # options:
-          #   fraction: 1.0
-        # span_name: "$request_method $upstream_host$upstream_uri"
-        # https://apisix.apache.org/docs/apisix/apisix-variable/
-        # https://nginx.org/en/docs/varindex.html
-        additional_attributes:
-          - upstream_scheme # need validate : got http instead of https
-          - upstream_host # need validate : got oapi-sit instead of upstream
-          - upstream_addr
-          - upstream_status
-          - upstream_uri
-          - request_uri # got /kbank/wamp
-          - proxy_host
-          - proxy_port
-          - upstream_http_server # need validate
-          - balancer_ip
-          - balancer_port
-          - consumer_name
-          - remote_addr
-          - request
-
     # Generate request ID first (default priority: 12015)
     - name: request-id
       enable: true
@@ -39,6 +14,11 @@ spec:
         include_in_response: true
         header_name: "X-Request-ID"
         algorithm: "uuid"
+
+    - name: opentelemetry # priority: 12009
+      config:
+        sampler:
+          name: always_on
 
 
     # Rate limiting (default priority: 1002)
