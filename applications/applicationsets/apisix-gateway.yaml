@@ -99,7 +99,7 @@ spec:
                   enable: true
                   host: datadog.datadog.svc.cluster.local
                   port: 8126
-                  namespace: apisix
+                  namespace: apisix-system
                 opentelemetry:
                   enable: true
                   resource:
