@@ -15,6 +15,16 @@ spec:
         header_name: "X-Request-ID"
         algorithm: "uuid"
 
+    - name: opentelemetry # priority: 12009
+      enable: true
+      config:
+        sampler:
+          name: always_on
+          options:
+            root:
+              name: always_on
+            fraction: 1
+
 
     # Rate limiting (default priority: 1002)
     # - name: limit-count
