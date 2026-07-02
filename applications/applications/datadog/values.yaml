@@ -14,24 +14,28 @@ datadog:
     socketEnabled: false
     portEnabled: true
     port: 8126 # default
-  otelCollector:
-    enabled: true
-    ports:
-    # Default GRPC port of OTLP receiver
-    - containerPort: 4317
-      hostPort: 4317
-      name: otel-grpc
-      protocol: TCP
-    # Default HTTP port of OTLP receiver
-    - containerPort: 4318
-      hostPort: 4318
-      name: otel-http
-      protocol: TCP
-  # otlp:
-  #   receiver:
-  #     protocols:
-  #       http:
-  #         enabled: true
+  # otelCollector:
+  #   enabled: true
+  #   ports:
+  #   # Default GRPC port of OTLP receiver
+  #   - containerPort: 4317
+  #     hostPort: 4317
+  #     name: otel-grpc
+  #     protocol: TCP
+  #   # Default HTTP port of OTLP receiver
+  #   - containerPort: 4318
+  #     hostPort: 4318
+  #     name: otel-http
+  #     protocol: TCP
+  otlp:
+    receiver:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+          enabled: true
+        http:
+          endpoint: 0.0.0.0:4318
+          enabled: true
   prometheusScrape:
     enabled: false
     serviceEndpoints: false

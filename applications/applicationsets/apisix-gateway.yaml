@@ -57,37 +57,59 @@ spec:
               # Essential plugins for API Gateway functionality
               # We're being selective here - only enabling plugins we'll actually use
               # This improves performance compared to enabling everything
+              # Priority references are from APISIX 1.x ingress-controller template:
+              # https://github.com/apache/apisix-helm-chart/blob/apisix/1.x/charts/apisix-ingress-controller/templates/apisix-configmap.yaml#L79
               plugins:
                 # Authentication & Authorization
-                - key-auth           # API key authentication
-                - jwt-auth           # JWT token validation
-                - basic-auth         # Basic HTTP authentication
-                - consumer-restriction # Restrict access to specific consumers
+                - key-auth           # API key authentication (priority: 2500)
+                - jwt-auth           # JWT token validation (priority: 2510)
+                - basic-auth         # Basic HTTP authentication (priority: 2520)
+                - consumer-restriction # Restrict access to specific consumers (priority: 2400)
 
                 # Traffic Control & Security
-                - limit-count        # Rate limiting (requests per time window)
-                - limit-conn         # Connection limiting
-                - ip-restriction     # IP allowlist/blocklist
-                - cors               # Cross-origin resource sharing
+                - limit-count        # Rate limiting (requests per time window) (priority: 1002)
+                - limit-conn         # Connection limiting (priority: 1003)
+                - ip-restriction     # IP allowlist/blocklist (priority: 3000)
+                - cors               # Cross-origin resource sharing (priority: 4000)
 
                 # Request/Response Transformation
-                - proxy-rewrite      # Header and URI modification
-                - request-validation # Request schema validation
-                - response-rewrite   # Response transformation
-                - echo               # Echo plugin for health checks and testing
-                - serverless-pre-function # Custom Lua functions for dynamic responses
-                - serverless-post-function # Custom Lua functions for dynamic responses
+                - proxy-rewrite      # Header and URI modification (priority: 1008)
+                - request-validation # Request schema validation (priority: 2800)
+                - response-rewrite   # Response transformation (priority: 899)
+                - echo               # Echo plugin for health checks and testing (priority: 412)
+                - serverless-pre-function # Custom Lua functions for dynamic responses (priority: 10000)
+                - serverless-post-function # Custom Lua functions for dynamic responses (priority: -2000)
 
                 # Observability & Logging
-                - prometheus         # Metrics collection
-                - http-logger        # HTTP access logging
-                - loki-logger        # Loki logging for structured log storage
-                - request-id         # Request tracking
+                - prometheus         # Metrics collection (priority: 500)
+                - http-logger        # HTTP access logging (priority: 410)
+                - loki-logger        # Loki logging for structured log storage (priority: 414)
+                - request-id         # Request tracking (priority: 12015)
+                - opentelemetry      # Distributed tracing (priority: 12009)
+                - datadog            # Datadog APM/tracing (priority: 495)
 
                 # Advanced Features
-                - proxy-cache        # Response caching
-                - traffic-split      # A/B testing and canary deployments
-                - fault-injection    # Chaos engineering support
+                - proxy-cache        # Response caching (priority: 1009)
+                - traffic-split      # A/B testing and canary deployments (priority: 966)
+                - fault-injection    # Chaos engineering support (priority: 11000)
+
+              # Plugin attributes for configured observability plugins
+              pluginAttrs:
+                datadog:
+                  enable: true
+                  host: datadog.datadog.svc.cluster.local
+                  port: 8126
+                  namespace: apisix-system
+                opentelemetry:
+                  enable: true
+                  resource:
+                    service.name: apisix-wamp
+                    env: prod
+                    version: 0.1.0
+                  collector:
+                    address: http://datadog.datadog.svc.cluster.local:4318
+                    request_timeout: 3
+                  set_ngx_var: true
 
             # CRITICAL: Disable the ingress controller
             # This is the key change that resolves the architectural conflict
