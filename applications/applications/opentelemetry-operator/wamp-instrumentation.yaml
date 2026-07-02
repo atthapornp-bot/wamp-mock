@@ -6,6 +6,26 @@ metadata:
 spec:
   nodejs:
     env:
+    - name: DD_ENV
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: 'metadata.labels[''tags.datadoghq.com/env'']'
+    - name: DD_SERVICE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: 'metadata.labels[''tags.datadoghq.com/service'']'
+    - name: DD_VERSION
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: 'metadata.labels[''tags.datadoghq.com/version'']'
+    - name: HOST_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
     - name: OTEL_EXPORTER_OTLP_PROTOCOL
       value: http/protobuf
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -29,6 +49,26 @@ spec:
       value: "0.1"
   go:
     env:
+      - name: DD_ENV
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: 'metadata.labels[''tags.datadoghq.com/env'']'
+      - name: DD_SERVICE
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: 'metadata.labels[''tags.datadoghq.com/service'']'
+      - name: DD_VERSION
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: 'metadata.labels[''tags.datadoghq.com/version'']'
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: status.hostIP
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: http/protobuf
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
