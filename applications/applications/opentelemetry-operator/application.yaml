@@ -32,3 +32,5 @@ spec:
             value: "false"
           - name: admissionWebhooks.autoGenerateCert.enabled
             value: "true"
+          - name: manager.autoInstrumentation.go.enabled
+            value: "true"
