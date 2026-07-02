@@ -103,7 +103,7 @@ spec:
                 opentelemetry:
                   enable: true
                   resource:
-                    service.name: apisix
+                    service.name: apisix-wamp
                     env: nonprod
                     version: 0.1.0
                   collector:
