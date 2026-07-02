@@ -20,6 +20,10 @@ spec:
       config:
         sampler:
           name: always_on
+          options:
+            root:
+              name: always_on
+            fraction: 1
 
 
     # Rate limiting (default priority: 1002)
