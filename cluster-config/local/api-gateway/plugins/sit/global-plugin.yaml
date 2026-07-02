@@ -16,6 +16,7 @@ spec:
         algorithm: "uuid"
 
     - name: opentelemetry # priority: 12009
+      enable: true
       config:
         sampler:
           name: always_on
