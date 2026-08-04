@@ -90,6 +90,7 @@ spec:
                     Name              tail
                     # Path where Kubernetes stores container logs
                     Path              /var/log/containers/*wamp*.log
+                    Exclude_Path      /var/log/containers/*argo*.log
                     # Use CRI parser since most K8s clusters use containerd/CRI-O
                     Parser            cri
                     # Tag pattern - extract namespace, pod, and container from filename
