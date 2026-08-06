@@ -95,6 +95,15 @@ agents:
     - key: "workload-type"
       operator: "Exists"
       effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: "workload-type"
+                operator: NotIn
+                values:
+                  - "gitlab-runner"
   podSecurity:
     apparmor:
       enabled: false
