@@ -86,6 +86,14 @@ spec:
               value: "*"
             - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-nlb-target-type
               value: ip
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-ssl-cert
+              value: arn:aws:acm:ap-southeast-1:043309326086:certificate/887e33a9-80d9-4928-a10b-e1ab446a97d8
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-ssl-ports
+              value: "443"
+            - name: controller.service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-ssl-negotiation-policy
+              value: ELBSecurityPolicy-TLS13-1-2-2021-06
+            - name: controller.service.targetPorts.https
+              value: http
             - name: controller.config.use-proxy-protocol
               value: "true"
             - name: controller.config.compute-full-forwarded-for
