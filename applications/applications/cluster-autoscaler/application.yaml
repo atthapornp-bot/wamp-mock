@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-autoscaler
+  namespace: argocd
+  finalizers:
+      - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/name: cluster-autoscaler
+
+spec:
+  syncPolicy:
+    automated: {} 
+    syncOptions:
+      - CreateNamespace=true
+      - RespectIgnoreDifferences=true
+
+  project: cluster-ops
+
+  destination:
+    namespace: kube-system
+    server: https://kubernetes.default.svc
+
+  sources:
+    - repoURL: https://kubernetes.github.io/autoscaler
+      chart: cluster-autoscaler
+      targetRevision: 9.58.0 # appVersion: 1.35.0
+      helm:
+        releaseName: cluster-autoscaler
+        parameters:
+          ## Force appVersion
+          - name: image.tag
+            value: v1.35.0
+        valueFiles:
+          - $values/applications/applications/cluster-autoscaler/values.yaml
+    - repoURL: https://gitlab.com/muang-thai-life-group/digital-solution/mtl-wamp/gitops/kubernetes/cluster-ops.git
+      targetRevision: release/dev
+      ref: values
