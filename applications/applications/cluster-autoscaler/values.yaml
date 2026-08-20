@@ -32,7 +32,7 @@ extraArgs:
   scan-interval: 30s
   max-node-provision-time: 15m
   # Maximum number of empty nodes that can be deleted at the same time during scale-down
-  max-empty-bulk-delete: 1
+  max-scale-down-parallelism: 1
   # ignore local storage when scale down nodes (e.g., emptyDir, opentelemetry volumes)
   skip-nodes-with-local-storage: false
   
@@ -48,6 +48,7 @@ resources:
 # Create a pod disruption budget to ensure autoscaler is always running
 podDisruptionBudget:
   minAvailable: 1
+  maxUnavailable: "" # this is value set by chart set empty string to disable this field
 
 # Priority class to ensure autoscaler pods aren't evicted
 priorityClassName: "system-cluster-critical"
