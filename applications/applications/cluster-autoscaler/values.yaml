@@ -1,0 +1,98 @@
+## https://github.com/kubernetes/autoscaler/blob/master/charts/cluster-autoscaler/values.yaml
+podLabels:
+  project: cluster-ops
+additionalLabels:
+  project: cluster-ops
+
+autoDiscovery:
+  cloudProviders: aws
+  clusterName: wamp-nonprod
+
+awsRegion: ap-southeast-1
+
+# Prevent rapid scale down by setting conservative parameters
+extraArgs:
+  # Wait longer before considering scale-down
+  scale-down-unneeded-time: 60m
+  # Increase delay after scaling up before considering scale-down
+  scale-down-delay-after-add: 60m
+  # Delay after a failed scale-down before retrying
+  scale-down-delay-after-failure: 5m
+  # Delay after deleting a node
+  scale-down-delay-after-delete: 15m
+  # Node utilization level below which to consider scale-down
+  scale-down-utilization-threshold: 0.6
+  # Upper bound on the total number of nodes in the cluster
+  max-nodes-total: 100
+  scale-down-non-empty-candidates-count: 5
+  # More granular control for different node groups
+  ignore-daemonsets-utilization: true
+  balancing-ignore-label: "node.kubernetes.io/exclude-from-external-load-balancers"
+  # Scaling stabilization settings
+  scan-interval: 30s
+  max-node-provision-time: 15m
+  # Maximum number of empty nodes that can be deleted at the same time during scale-down
+  max-empty-bulk-delete: 1
+  # ignore local storage when scale down nodes (e.g., emptyDir, opentelemetry volumes)
+  skip-nodes-with-local-storage: false
+  
+# Add resource requests and limits to ensure the autoscaler itself is stable
+resources:
+  requests:
+    cpu: 200m
+    memory: 300Mi
+  limits:
+    cpu: 500m
+    memory: 500Mi
+
+# Create a pod disruption budget to ensure autoscaler is always running
+podDisruptionBudget:
+  minAvailable: 1
+
+# Priority class to ensure autoscaler pods aren't evicted
+priorityClassName: "system-cluster-critical"
+
+rbac:
+  serviceAccount:
+    # rbac.serviceAccount.create -- If `true` and `rbac.create` is also true, a Service Account will be created.
+    create: true
+    # rbac.serviceAccount.name -- The name of the ServiceAccount to use. If not set and create is `true`, a name is generated using the fullname template.
+    name: cluster-autoscaler
+
+# affinity -- Affinity for pod assignment
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/os
+            operator: In
+            values:
+              - linux
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 3
+        preference:
+          matchExpressions:
+            - key: project
+              operator: In
+              values:
+                - cluster-ops
+      - weight: 1
+        preference:
+          matchExpressions:
+            - key: eks.amazonaws.com/capacityType
+              operator: In
+              values:
+                - ON_DEMAND
+  # Add pod anti-affinity to spread replicas
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: cluster-autoscaler
+          topologyKey: "kubernetes.io/hostname"
+
+# Ensure autoscaler pods spread properly if using multiple replicas
+replicaCount: 1
